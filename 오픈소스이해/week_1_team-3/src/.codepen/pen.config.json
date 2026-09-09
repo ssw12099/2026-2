@@ -1,0 +1,16 @@
+{
+  "blocks": {
+    "fingerprint-1": {
+      "createdAt": "2026-09-03T00:16:15.109350063Z",
+      "disabled": false,
+      "name": "fingerprint-1",
+      "version": "latest"
+    },
+    "validate-1": {
+      "createdAt": "2026-09-03T00:16:15.109350063Z",
+      "disabled": false,
+      "name": "validate-1",
+      "version": "latest"
+    }
+  }
+}
