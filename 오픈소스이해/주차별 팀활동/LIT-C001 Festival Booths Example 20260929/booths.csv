@@ -1,0 +1,9 @@
+id,name,category,location,indoor,description,is_open
+B001,AI 포토존,체험,학생회관 3층,True,AI로 축제 기념사진 만들기,True
+B002,DIY 키링 공방,체험,학생회관 2층,True,나만의 키링 직접 만들기,True
+B003,보드게임 라운지,놀이,도서관 로비,True,친구와 협동 게임 즐기기,True
+B004,독립출판 전시,전시,도서관 1층,True,학생 제작 책과 잡지 살펴보기,True
+B005,과학 마술 교실,체험,강의동 103호,True,간단한 실험으로 원리 알아보기,False
+B006,거리 공연,공연,중앙광장,False,학생 밴드의 라이브 무대,True
+B007,푸드트럭 거리,먹거리,운동장 입구,False,간식과 음료 판매,True
+B008,야외 플리마켓,쇼핑,잔디광장,False,학생 창작품 판매,True
