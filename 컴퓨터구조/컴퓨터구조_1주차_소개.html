@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컴퓨터 구조 · 1주차 소개 — 한림대학교 소프트웨어학부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --field:#0A2540;
+  --field-2:#0E3055;
+  --rule:#2F5C82;
+  --line:#8FBEDC;
+  --chalk:#EAF3FA;
+  --dim:#9DBDD6;
+  --amber:#F0A830;
+  --stage-w:1280px;
+  --stage-h:720px;
+  --sans:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','IBM Plex Sans KR',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--field);
+  color:var(--chalk);
+  font-family:var(--sans);
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+}
+body::before{
+  content:"";
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(143,190,220,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(143,190,220,.055) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+body::after{
+  content:"";
+  position:fixed;inset:0;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(28,86,140,.45),transparent 70%);
+  pointer-events:none;
+}
+
+/* ---------- stage ---------- */
+#stage{
+  position:relative;
+  width:var(--stage-w);height:var(--stage-h);
+  transform-origin:center center;
+  flex:none;
+}
+.slide{
+  position:absolute;inset:0;
+  padding:60px 76px 76px;
+  display:none;
+  flex-direction:column;
+}
+.slide.is-active{display:flex;animation:appear .32s ease both}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+
+/* ---------- chrome ---------- */
+.rail{
+  position:absolute;left:76px;right:76px;top:34px;
+  display:flex;align-items:baseline;justify-content:space-between;
+  font-size:12.5px;color:var(--dim);letter-spacing:.02em;
+}
+.rail .course{font-weight:500}
+.rail .num{font-family:var(--mono);font-size:12px;color:var(--line)}
+.slide--title .rail{display:none}
+
+.bus{
+  position:absolute;left:0;right:0;bottom:0;height:34px;
+  display:flex;align-items:center;gap:0;padding:0 76px;
+}
+.bus .track{position:relative;flex:1;height:1px;background:var(--rule)}
+.bus button{
+  position:absolute;top:-9px;width:18px;height:18px;
+  transform:translateX(-50%);
+  background:none;border:0;cursor:pointer;padding:0;
+}
+.bus button::after{
+  content:"";display:block;margin:7px auto 0;
+  width:6px;height:3px;background:var(--rule);
+  transition:background .2s,height .2s,margin .2s;
+}
+.bus button[aria-current="true"]::after{background:var(--amber);height:11px;margin-top:3px}
+.bus button:hover::after{background:var(--line)}
+.bus button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* ---------- type ---------- */
+h1{
+  font-size:76px;line-height:1.06;font-weight:700;letter-spacing:-.025em;
+}
+h1 .en{display:block;font-size:30px;font-weight:400;letter-spacing:.06em;color:var(--line);margin-top:14px}
+h2{
+  font-size:44px;line-height:1.15;font-weight:700;letter-spacing:-.02em;
+  margin-bottom:8px;
+}
+.subhead{font-size:17px;color:var(--dim);font-weight:400;line-height:1.5;max-width:62ch}
+.headwrap{margin-bottom:38px}
+.headwrap::after{
+  content:"";display:block;width:72px;height:2px;background:var(--amber);margin-top:22px;
+}
+p,li{font-size:18px;line-height:1.62}
+strong{font-weight:600;color:#fff}
+.mono{font-family:var(--mono);font-variant-ligatures:none}
+
+/* ---------- title slide ---------- */
+.slide--title{padding:0;flex-direction:row;align-items:stretch}
+.title-left{
+  width:52%;padding:78px 0 78px 76px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.title-week{
+  font-family:var(--mono);font-size:14px;color:var(--amber);
+  margin-bottom:26px;letter-spacing:.08em;
+}
+.title-meta{margin-top:46px;font-size:16px;line-height:1.85;color:var(--dim)}
+.title-meta .name{color:var(--chalk);font-size:20px;font-weight:600;display:block;margin-bottom:4px}
+.title-meta a{color:var(--line);text-decoration:none;border-bottom:1px solid rgba(143,190,220,.35)}
+.title-meta a:hover{color:var(--amber);border-color:var(--amber)}
+.title-right{
+  flex:1;position:relative;display:grid;place-items:center;
+  border-left:1px solid rgba(143,190,220,.16);
+  margin:0 0 0 60px;
+}
+
+/* ---------- schematic ---------- */
+.schematic{width:100%;height:auto}
+.schematic .box{fill:rgba(14,48,85,.85);stroke:var(--line);stroke-width:1.4}
+.schematic .wire{stroke:var(--line);stroke-width:1.4;fill:none}
+.schematic .ctrl{stroke:var(--amber);stroke-width:1.1;fill:none;stroke-dasharray:4 4}
+.schematic .lbl{fill:var(--chalk);font-family:var(--sans);font-size:13px;font-weight:500}
+.schematic .lbl--sm{fill:var(--dim);font-size:11px;font-weight:400}
+.schematic .lbl--code{fill:var(--line);font-family:var(--mono);font-size:11px}
+.schematic .lbl--ctrl{fill:var(--amber);font-family:var(--mono);font-size:10.5px}
+.schematic .pulse{fill:var(--amber)}
+.ghost{opacity:.62}
+.ghost .lbl,.ghost .lbl--sm,.ghost .lbl--code,.ghost .lbl--ctrl{display:none}
+
+.pulse{
+  offset-path:path("M 120 250 L 200 250 L 400 250 L 640 250 L 760 250 L 1010 250 L 1052 250 L 1052 420 L 400 420 L 400 300");
+  offset-distance:0%;
+  animation:run 6.5s cubic-bezier(.55,.1,.45,.9) infinite;
+}
+@keyframes run{0%{offset-distance:0%;opacity:0}6%{opacity:1}92%{opacity:1}100%{offset-distance:100%;opacity:0}}
+.draw{stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 1.6s ease-out .15s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ---------- info grid (교과목 정보) ---------- */
+.specs{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--rule)}
+.specs div{
+  padding:22px 26px 22px 0;border-bottom:1px solid var(--rule);
+}
+.specs dt{font-size:13.5px;color:var(--dim);margin-bottom:7px}
+.specs dd{font-size:22px;font-weight:500;letter-spacing:-.01em}
+.specs dd .mono{font-size:21px}
+.specs a{color:var(--chalk);text-decoration:none;border-bottom:1px solid rgba(143,190,220,.4)}
+.specs a:hover{color:var(--amber);border-color:var(--amber)}
+.note{margin-top:26px;font-size:14.5px;color:var(--dim)}
+
+/* ---------- generic list ---------- */
+.bullets{list-style:none;display:flex;flex-direction:column;gap:20px;max-width:78ch}
+.bullets li{position:relative;padding-left:26px}
+.bullets li::before{
+  content:"";position:absolute;left:0;top:.62em;
+  width:9px;height:9px;border:1.5px solid var(--amber);
+}
+.bullets li span{display:block;font-size:15.5px;color:var(--dim);margin-top:6px;line-height:1.6}
+
+/* ---------- stage blocks (학습 내용) ---------- */
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:0;align-items:stretch}
+.stages article{
+  border:1px solid var(--rule);border-right:0;padding:30px 26px 34px;
+  position:relative;background:rgba(14,48,85,.5);
+}
+.stages article:last-child{border-right:1px solid var(--rule)}
+.stages h3{font-size:24px;font-weight:600;line-height:1.3;margin-bottom:14px;letter-spacing:-.01em}
+.stages .en-sub{font-family:var(--mono);font-size:11.5px;color:var(--amber);margin-bottom:20px;display:block}
+.stages p{font-size:15px;color:var(--dim);line-height:1.65}
+.stages article::after{
+  content:"";position:absolute;right:-7px;top:50%;
+  width:13px;height:13px;background:var(--field);
+  border-top:1.5px solid var(--line);border-right:1.5px solid var(--line);
+  transform:translateY(-50%) rotate(45deg);
+}
+.stages article:last-child::after{display:none}
+
+/* ---------- tools (실습) ---------- */
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.tool{border-left:2px solid var(--amber);padding:6px 0 6px 26px}
+.tool h3{font-size:30px;font-weight:600;letter-spacing:-.015em}
+.tool .role{font-size:14px;color:var(--amber);font-family:var(--mono);margin:8px 0 16px}
+.tool p{font-size:16px;color:var(--dim);line-height:1.65}
+.tool .free{margin-top:18px;font-size:13.5px;color:var(--line)}
+
+/* ---------- grade field diagram ---------- */
+.ruler{display:flex;font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-bottom:8px}
+.ruler span{border-left:1px solid var(--rule);padding-left:6px;padding-bottom:6px}
+.fields{display:flex;height:132px;border:1.5px solid var(--line)}
+.fields > div{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 30px;position:relative;
+}
+.f-exam{flex:70;background:rgba(240,168,48,.14);border-right:1.5px solid var(--line)}
+.f-lab{flex:30}
+.fields .pct{font-family:var(--mono);font-size:40px;font-weight:600;line-height:1}
+.f-exam .pct{color:var(--amber)}
+.fields .what{font-size:19px;font-weight:600;margin-top:12px}
+.fields .detail{font-size:14.5px;color:var(--dim);margin-top:6px}
+.grade-note{margin-top:30px;font-size:15.5px;color:var(--dim);max-width:70ch;line-height:1.7}
+
+/* ---------- textbook ---------- */
+.book-row{display:grid;grid-template-columns:250px 1fr;gap:56px;align-items:center}
+.book{
+  border:1.5px solid var(--line);border-left-width:9px;
+  padding:32px 24px;height:330px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:rgba(14,48,85,.6);
+}
+.book .bt{font-size:27px;font-weight:700;line-height:1.28;letter-spacing:-.02em}
+.book .ed{font-family:var(--mono);font-size:12px;color:var(--amber)}
+.book .pub{font-size:13px;color:var(--dim)}
+.credits{display:flex;flex-direction:column;gap:18px}
+.credits div{display:grid;grid-template-columns:88px 1fr;gap:18px;align-items:baseline}
+.credits dt{font-size:13.5px;color:var(--dim)}
+.credits dd{font-size:19px}
+.where{margin-top:34px;padding-top:22px;border-top:1px solid var(--rule);font-size:15.5px;color:var(--dim)}
+.where b{color:var(--chalk);font-weight:500}
+
+/* ---------- reasons ---------- */
+.reasons{display:grid;grid-template-columns:1fr 1fr;gap:28px 46px}
+.reason{border-top:1px solid var(--rule);padding-top:18px}
+.reason h3{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-bottom:9px}
+.reason p{font-size:14.5px;color:var(--dim);line-height:1.62}
+.reason .kw{font-family:var(--mono);font-size:12px;color:var(--amber);display:block;margin-top:10px}
+
+/* ---------- final schematic slide ---------- */
+.slide--datapath{padding-bottom:52px}
+.slide--datapath .headwrap{margin-bottom:14px}
+.slide--datapath .headwrap::after{display:none}
+.dp-wrap{flex:1;display:grid;place-items:center}
+.legend{display:flex;gap:30px;font-size:13px;color:var(--dim);margin-top:6px}
+.legend i{display:inline-block;width:22px;height:0;border-top:1.5px solid var(--line);vertical-align:middle;margin-right:8px}
+.legend .c i{border-top-style:dashed;border-color:var(--amber)}
+
+/* ---------- closing ---------- */
+.slide--end{justify-content:center;align-items:flex-start}
+.slide--end h2{font-size:56px;max-width:20ch}
+.contact{display:flex;gap:56px;margin-top:44px;flex-wrap:wrap}
+.contact div{border-left:2px solid var(--amber);padding-left:20px}
+.contact dt{font-size:13px;color:var(--dim);margin-bottom:6px}
+.contact dd{font-size:19px}
+.contact a{color:var(--chalk);text-decoration:none;border-bottom:1px solid rgba(143,190,220,.4)}
+.contact a:hover{color:var(--amber);border-color:var(--amber)}
+
+/* ---------- help ---------- */
+.hint{
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+  font-size:12px;color:var(--dim);opacity:.75;
+  font-family:var(--mono);letter-spacing:.03em;
+  transition:opacity .5s;
+}
+.hint.gone{opacity:0}
+
+@media (prefers-reduced-motion:reduce){
+  .slide.is-active{animation:none}
+  .pulse{animation:none;offset-distance:0%;opacity:0}
+  .draw{stroke-dasharray:none;stroke-dashoffset:0;animation:none}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- 1. TITLE -->
+  <section class="slide slide--title">
+    <div class="title-left">
+      <div class="title-week">WEEK 01 · 소개</div>
+      <h1>컴퓨터 구조<span class="en">Computer Architecture</span></h1>
+      <div class="title-meta">
+        <span class="name">이정근</span>
+        한림대학교 소프트웨어학부<br>
+        <a href="mailto:jeonggun.lee@hallym.ac.kr">jeonggun.lee@hallym.ac.kr</a><br>
+        <a href="https://www.onchip.net" target="_blank" rel="noopener">www.onchip.net</a>
+      </div>
+    </div>
+    <div class="title-right">
+      <div id="ghost-slot" style="width:88%"></div>
+    </div>
+  </section>
+
+  <!-- 2. 교과목 정보 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>교과목 정보</h2>
+      <p class="subhead">한 학기 동안 함께할 과목의 기본 정보입니다.</p>
+    </div>
+    <dl class="specs">
+      <div><dt>교과목번호 / 분반</dt><dd class="mono">506204 / 3</dd></div>
+      <div><dt>이수구분</dt><dd>공통전선</dd></div>
+      <div><dt>담당교수</dt><dd>이정근 · 소프트웨어학부</dd></div>
+      <div><dt>전자우편</dt><dd><a href="mailto:jeonggun.lee@hallym.ac.kr">jeonggun.lee@hallym.ac.kr</a></dd></div>
+      <div><dt>연구실 홈페이지</dt><dd style="font-size:17px"><a href="https://sites.google.com/site/embeddedsochallymuniv/home" target="_blank" rel="noopener">sites.google.com/site/embeddedsochallymuniv</a></dd></div>
+      <div><dt>휴대전화</dt><dd class="mono">010-3840-6765</dd></div>
+    </dl>
+    <p class="note">휴대전화는 급한 연락이 필요할 때만 이용해 주세요. 그 외 질문은 전자우편으로 보내면 됩니다.</p>
+  </section>
+
+  <!-- 3. 수업 개요 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>수업 개요</h2>
+      <p class="subhead">현대 컴퓨터가 안에서 어떻게 동작하는지를 배웁니다.</p>
+    </div>
+    <ul class="bullets">
+      <li>
+        <strong>컴퓨터 내부 구조를 이해하면 더 나은 코드를 쓰게 됩니다.</strong>
+        <span>같은 알고리즘이라도 하드웨어가 어떻게 동작하는지 알면 훨씬 빠른 코드를 작성할 수 있습니다.</span>
+      </li>
+      <li>
+        <strong>MIPS 프로세서 구조를 중심으로 다룹니다.</strong>
+        <span>구조가 단순하고 규칙적이어서, 프로세서가 명령어를 처리하는 과정을 끝까지 따라가 볼 수 있습니다.</span>
+      </li>
+      <li>
+        <strong>MIPS 어셈블리 언어를 직접 실습합니다.</strong>
+        <span>고급 언어 한 줄이 기계 수준에서 어떤 명령어로 바뀌는지 손으로 확인합니다.</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 4. 실습 도구 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>실습 도구</h2>
+      <p class="subhead">두 가지 오픈소스 시뮬레이터를 사용합니다. 둘 다 무료로 내려받아 개인 노트북에 설치할 수 있습니다.</p>
+    </div>
+    <div class="tools">
+      <div class="tool">
+        <h3>QtSPIM</h3>
+        <div class="role">MIPS 어셈블러 시뮬레이터</div>
+        <p>어셈블리 코드를 한 줄씩 실행하면서 레지스터와 메모리 값이 어떻게 바뀌는지 눈으로 확인합니다.</p>
+        <div class="free">명령어 단위 실행 · 레지스터 관찰 · 메모리 덤프</div>
+      </div>
+      <div class="tool">
+        <h3>Logisim</h3>
+        <div class="role">논리 회로 시뮬레이터</div>
+        <p>게이트부터 시작해 ALU, 레지스터 파일, 제어 유닛을 직접 연결하고 MIPS 프로세서를 완성해 봅니다.</p>
+        <div class="free">회로 설계 · 클럭 구동 · 동작 검증</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 주요 학습 내용 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>주요 학습 내용</h2>
+      <p class="subhead">명령어에서 시작해 프로세서를 지나 메모리까지, 데이터가 흘러가는 순서 그대로 배웁니다.</p>
+    </div>
+    <div class="stages">
+      <article>
+        <h3>명령어와<br>어셈블리 언어</h3>
+        <span class="en-sub">Architecture &amp; Assembly</span>
+        <p>명령어 집합이 무엇이고 어떻게 인코딩되는지, 프로그램이 기계어로 어떻게 표현되는지 다룹니다.</p>
+      </article>
+      <article>
+        <h3>MIPS<br>마이크로아키텍처</h3>
+        <span class="en-sub">Microarchitecture</span>
+        <p>단일 사이클과 파이프라인 데이터패스를 설계하고, 제어 신호가 각 부품을 어떻게 지휘하는지 봅니다.</p>
+      </article>
+      <article>
+        <h3>메모리 구조와<br>캐시</h3>
+        <span class="en-sub">Memory &amp; Cache</span>
+        <p>메모리 계층이 왜 필요한지, 캐시가 어떻게 성능을 좌우하는지 원리부터 살펴봅니다.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 6. 성적 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>성적 반영 비율</h2>
+      <p class="subhead">명령어의 비트 필드처럼, 100%를 두 구간으로 나눕니다.</p>
+    </div>
+    <div class="ruler">
+      <span style="flex:70">0</span>
+      <span style="flex:30">70</span>
+      <span style="flex:0 0 auto">100</span>
+    </div>
+    <div class="fields">
+      <div class="f-exam">
+        <div class="pct">70%</div>
+        <div class="what">중간고사 · 기말고사</div>
+        <div class="detail">개념을 정확히 이해했는지 확인합니다.</div>
+      </div>
+      <div class="f-lab">
+        <div class="pct">30%</div>
+        <div class="what">실습 및 과제</div>
+        <div class="detail">직접 만들어 보며 익힙니다.</div>
+      </div>
+    </div>
+    <p class="grade-note">실습 30%는 매주 조금씩 쌓입니다. 밀리지 않고 따라오면 시험 준비도 자연스럽게 됩니다.</p>
+  </section>
+
+  <!-- 7. 교재 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>교재</h2>
+    </div>
+    <div class="book-row">
+      <div class="book">
+        <div class="ed">2ND EDITION</div>
+        <div class="bt">디지털 논리 설계와<br>컴퓨터 구조</div>
+        <div class="pub">Digital Design and<br>Computer Architecture</div>
+      </div>
+      <div>
+        <dl class="credits">
+          <div><dt>지은이</dt><dd>데이비드 머니 해리스 · 사라 L. 해리스</dd></div>
+          <div><dt>옮긴이</dt><dd>강영흥 · 박춘명 · 지석근 · 황지원</dd></div>
+          <div><dt>출판사</dt><dd>카오스북</dd></div>
+        </dl>
+        <p class="where">구입 및 대출 &nbsp;·&nbsp; <b>교보문고</b> &nbsp;·&nbsp; <b>한림대학교 도서관</b><br>
+        수업은 교재 순서를 따라가되, 필요한 부분은 강의자료로 보충합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. WHY 1 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>왜 컴퓨터 구조를 배우나</h2>
+      <p class="subhead">소프트웨어를 잘 만들기 위해서입니다. 아래는 그중 눈에 띄는 네 가지입니다.</p>
+    </div>
+    <div class="reasons">
+      <div class="reason">
+        <h3>성능을 진짜로 끌어올리려면</h3>
+        <p>캐시와 메모리 계층, 분기 예측, 파이프라이닝, SIMD와 GPU 같은 실제 병렬성을 알아야 코드와 모델을 최적화할 수 있습니다.</p>
+        <span class="kw">SoA vs AoS · 루프 타일링 · 벡터화 · 메모리 대역폭</span>
+      </div>
+      <div class="reason">
+        <h3>보안의 뿌리가 여기 있습니다</h3>
+        <p>버퍼 오버플로우, 권한 수준, 캐시 타이밍 같은 부채널 공격은 모두 하드웨어 구조에서 출발합니다. 안전한 코드를 설계하려면 필수입니다.</p>
+        <span class="kw">스택 프레임 · 권한 링 · 측면 채널</span>
+      </div>
+      <div class="reason">
+        <h3>병렬·분산 프로그래밍의 토대</h3>
+        <p>코어와 스레드, 메모리 일관성, 원자적 연산을 모르면 데이터 레이스와 성능 역행을 겪게 됩니다.</p>
+        <span class="kw">코어 · 워프 · 메모리 일관성 · 원자적 연산</span>
+      </div>
+      <div class="reason">
+        <h3>상위 과목으로 이어집니다</h3>
+        <p>운영체제의 가상메모리와 컨텍스트 스위칭, 컴파일러의 레지스터 할당, 데이터베이스의 메모리 레이아웃까지 이해가 달라집니다.</p>
+        <span class="kw">OS · 컴파일러 · 데이터베이스 · 네트워킹</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. WHY 2 -->
+  <section class="slide">
+    <div class="headwrap">
+      <h2>왜 컴퓨터 구조를 배우나</h2>
+      <p class="subhead">그리고 지금 산업이 움직이는 방향과 맞닿아 있는 세 가지입니다.</p>
+    </div>
+    <div class="reasons">
+      <div class="reason">
+        <h3>클라우드와 엣지의 비용·전력</h3>
+        <p>x86과 ARM의 차이, NUMA, 가상화, 전력 곡선을 이해하는 것이 성능과 원가, 전력을 두고 내리는 의사결정의 핵심입니다.</p>
+        <span class="kw">x86 vs ARM · NUMA · 가상화 · DVFS</span>
+      </div>
+      <div class="reason">
+        <h3>AI·그래픽스 가속기의 실전 활용</h3>
+        <p>GPU와 TPU, NPU의 스레딩·메모리 모델, 텐서 코어 특성, 양자화와 메모리 발자국이 추론 속도와 지연을 좌우합니다.</p>
+        <span class="kw">텐서 코어 · 양자화 · 메모리 발자국</span>
+      </div>
+      <div class="reason">
+        <h3>새로운 아키텍처를 읽는 힘</h3>
+        <p>RISC-V, 특수목적 가속기, PIM처럼 빠르게 바뀌는 하드웨어 흐름을 읽고 소프트웨어 전략을 세울 수 있게 됩니다.</p>
+        <span class="kw">RISC-V · 도메인 특화 가속기 · PIM</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. DATAPATH -->
+  <section class="slide slide--datapath">
+    <div class="headwrap">
+      <h2>어쨌든, 우리가 직접 만들 컴퓨터</h2>
+      <p class="subhead">학기가 끝날 무렵 여러분은 이 회로를 Logisim에서 손으로 연결하고, 그 위에서 어셈블리 프로그램을 돌리게 됩니다.</p>
+      <div class="legend">
+        <span><i></i>데이터 경로</span>
+        <span class="c"><i></i>제어 신호</span>
+      </div>
+    </div>
+    <div class="dp-wrap"><div id="full-slot" style="width:100%"></div></div>
+  </section>
+
+  <!-- 11. END -->
+  <section class="slide slide--end">
+    <div class="headwrap">
+      <h2>다음 시간에는 명령어부터 시작합니다</h2>
+      <p class="subhead">그 전에 교재를 준비하고, QtSPIM과 Logisim을 노트북에 설치해 오세요.</p>
+    </div>
+    <dl class="contact">
+      <div><dt>전자우편</dt><dd><a href="mailto:jeonggun.lee@hallym.ac.kr">jeonggun.lee@hallym.ac.kr</a></dd></div>
+      <div><dt>강의 홈페이지</dt><dd><a href="https://www.onchip.net" target="_blank" rel="noopener">www.onchip.net</a></dd></div>
+      <div><dt>연구실</dt><dd>Embedded SoC Lab · 한림대학교</dd></div>
+    </dl>
+  </section>
+
+  <div class="rail"><span class="course">컴퓨터 구조 · 1주차 소개</span><span class="num" id="counter">02 / 11</span></div>
+  <nav class="bus"><div class="track" id="track"></div></nav>
+</div>
+
+<div class="hint" id="hint">← → 또는 스페이스로 이동</div>
+
+<template id="schematic">
+<svg class="schematic" viewBox="0 0 1160 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MIPS 단일 사이클 데이터패스 회로도">
+  <g class="draw">
+    <!-- main horizontal data path -->
+    <path class="wire" d="M120 250 H200"/>
+    <path class="wire" d="M330 250 H400"/>
+    <path class="wire" d="M530 230 H600 M530 275 H570 L570 300 H600"/>
+    <path class="wire" d="M690 250 H760"/>
+    <path class="wire" d="M890 250 H1010"/>
+    <path class="wire" d="M690 250 L720 250 L720 200 L1010 200"/>
+    <!-- writeback loop -->
+    <path class="wire" d="M1044 250 H1090 V430 H400 V300"/>
+    <!-- pc increment -->
+    <path class="wire" d="M92 250 V150 H150 M180 150 H92 V210"/>
+    <!-- instruction fanout -->
+    <path class="wire" d="M330 250 V330 H400"/>
+    <!-- control lines -->
+    <path class="ctrl" d="M360 205 V120 H470"/>
+    <path class="ctrl" d="M600 120 H645 V210"/>
+    <path class="ctrl" d="M600 120 H820 V170"/>
+    <path class="ctrl" d="M600 120 H1027 V200"/>
+  </g>
+
+  <!-- PC -->
+  <rect class="box" x="64" y="210" width="56" height="80"/>
+  <text class="lbl" x="92" y="256" text-anchor="middle">PC</text>
+  <!-- +4 -->
+  <rect class="box" x="150" y="128" width="60" height="44"/>
+  <text class="lbl--code" x="180" y="155" text-anchor="middle">PC + 4</text>
+
+  <!-- instruction memory -->
+  <rect class="box" x="200" y="180" width="130" height="140"/>
+  <text class="lbl" x="265" y="240" text-anchor="middle">명령어 메모리</text>
+  <text class="lbl--sm" x="265" y="262" text-anchor="middle">Instruction Memory</text>
+  <text class="lbl--code" x="265" y="345" text-anchor="middle">20010abb</text>
+
+  <!-- register file -->
+  <rect class="box" x="400" y="160" width="130" height="180"/>
+  <text class="lbl" x="465" y="245" text-anchor="middle">레지스터 파일</text>
+  <text class="lbl--sm" x="465" y="267" text-anchor="middle">32 × 32-bit</text>
+  <text class="lbl--code" x="410" y="185">rs</text>
+  <text class="lbl--code" x="410" y="330">rt</text>
+
+  <!-- ALU -->
+  <polygon class="box" points="600,175 690,220 690,280 600,325 600,262 618,250 600,238"/>
+  <text class="lbl" x="645" y="256" text-anchor="middle">ALU</text>
+
+  <!-- data memory -->
+  <rect class="box" x="760" y="170" width="130" height="150"/>
+  <text class="lbl" x="825" y="240" text-anchor="middle">데이터 메모리</text>
+  <text class="lbl--sm" x="825" y="262" text-anchor="middle">Data Memory</text>
+
+  <!-- writeback mux -->
+  <rect class="box" x="1010" y="180" width="34" height="120" rx="14"/>
+  <text class="lbl--code" x="1027" y="245" text-anchor="middle">M</text>
+
+  <!-- control unit -->
+  <rect class="box" x="470" y="86" width="130" height="60"/>
+  <text class="lbl" x="535" y="122" text-anchor="middle">제어 유닛</text>
+  <text class="lbl--ctrl" x="655" y="140">ALUControl</text>
+  <text class="lbl--ctrl" x="830" y="160">MemWrite</text>
+  <text class="lbl--ctrl" x="1000" y="172">MemtoReg</text>
+
+  <text class="lbl--sm" x="742" y="418">쓰기 결과가 레지스터 파일로 되돌아옵니다</text>
+
+  <circle class="pulse" r="5"/>
+</svg>
+</template>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage');
+  var slides=Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var counter=document.getElementById('counter');
+  var track=document.getElementById('track');
+  var hint=document.getElementById('hint');
+  var i=0;
+
+  // clone the schematic into the title (ghost) and datapath slides
+  var tpl=document.getElementById('schematic');
+  var ghost=tpl.content.cloneNode(true);
+  ghost.querySelector('svg').classList.add('ghost');
+  document.getElementById('ghost-slot').appendChild(ghost);
+  document.getElementById('full-slot').appendChild(tpl.content.cloneNode(true));
+
+  // dot navigation along the bus line
+  slides.forEach(function(s,n){
+    var b=document.createElement('button');
+    b.type='button';
+    b.setAttribute('aria-label',(n+1)+'번 슬라이드');
+    b.style.left=(slides.length>1 ? (n/(slides.length-1))*100 : 0)+'%';
+    b.addEventListener('click',function(){go(n);});
+    track.appendChild(b);
+  });
+  var dots=Array.prototype.slice.call(track.querySelectorAll('button'));
+
+  function pad(n){return n<10?'0'+n:''+n;}
+
+  function go(n){
+    if(n<0||n>=slides.length) return;
+    slides[i].classList.remove('is-active');
+    i=n;
+    slides[i].classList.add('is-active');
+    counter.textContent=pad(i+1)+' / '+pad(slides.length);
+    dots.forEach(function(d,k){d.setAttribute('aria-current',k===i?'true':'false');});
+  }
+
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1);hide();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1);hide();}
+    else if(e.key==='Home'){go(0);}
+    else if(e.key==='End'){go(slides.length-1);}
+  });
+
+  stage.addEventListener('click',function(e){
+    if(e.target.closest('a,button')) return;
+    var r=stage.getBoundingClientRect();
+    go(((e.clientX-r.left)/r.width>0.28)?i+1:i-1);
+    hide();
+  });
+
+  var t=setTimeout(hide,6000);
+  function hide(){clearTimeout(t);hint.classList.add('gone');}
+
+  function fit(){
+    var pad=window.innerWidth<700?8:24;
+    var s=Math.min((window.innerWidth-pad*2)/1280,(window.innerHeight-pad*2)/720);
+    stage.style.transform='scale('+s+')';
+    document.body.style.height=window.innerHeight+'px';
+  }
+  window.addEventListener('resize',fit);
+  fit();
+  go(0);
+})();
+</script>
+</body>
+</html>
