@@ -16,5 +16,3 @@ main:
 	syscall
 
 		.data
-myVal: .word 0x23456789
-myVal2: .word 0
