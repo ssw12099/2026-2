@@ -1,0 +1,432 @@
+#week2	led
+
+int Rl = 13;
+int Yl = 10;
+int Gl = 9;  # 변수 선언 Gl에 9번 넣겠다
+
+void setup() {
+  // put your setup code here, to run once:
+	#pinMode 하는 이유
+	pinMode(13,OUTPUT);	#13핀을 아웃풋으로 설정
+	pinMode(Rl,OUTPUT);	#RI 변수에 핀을 아웃풋으로 설정
+	# 이거는 디지털 신호로 쓰겠다는 뜻
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+# led 서서히 밝게 키기
+  for(int i=0;i<256;i++){		#0~255 led 범위 / 0 꺼짐 1이상 켜짐
+    analogWrite(Gl,i);
+    delay(10);
+  }
+
+# led 서서히 어둡게 끄기
+  for(int i=255;i>=0;i--){	# 255부터 0까지 가야함 / 0이 꺼짐
+    analogWrite(Gl,i);
+    delay(10);
+  }
+
+  delay(1000); # 딜레이줘서 기다리기
+  analogWrite(Gl,i); # ~ 아날로그 핀 / 값으로 신호 주기
+  digitalWrite(13,HIGH);	# 디지털 핀에 신호주기
+  #HIGH = 1 LOW = 0
+  digitalWrite(13, HIGH);  # ON (약 5V)
+  digitalWrite(13, LOW);   # OFF (약 0V)
+}
+
+
+
+//week 3-1		버튼, 3색 led
+
+const int ledYellow = 9;  //상수
+const int ledGreen = 10;  //상수로 설정 !
+int ledState = 0;
+
+void setup(){
+	pinMode(ledYellow, OUTPUT);
+	pinMode(ledGreen, OUTPUT);
+}
+
+void loop(){
+	digitalWrite(ledYellow,  HIGH);
+	delay(1000);
+	digitalWrite(ledYellow,  LOW);
+	digitalWrite(ledGreen,  HIGH);
+	delay(3000);
+	
+	if(ledState==0){
+		digitalWrite(ledYellow, HIGH);
+		delay(1000);
+		digitalWrite(ledRed,LOW);
+		digitalWrite(ledYellow,LOW);
+	}
+}
+
+
+//week 3 -2
+
+void setup(){
+	pinMode(13,OUTPUT);
+	pinMode(8,INPUT);
+}
+
+void loop(){
+	int value = digitalRead(8);
+	if(value == HIGH){
+		digitalWrite(13,HIGH);
+	} else {
+		digitalWrite(13, LOW);
+	}
+}
+
+
+
+//week 3-3
+
+void setup() {
+  // put your setup code here, to run once:
+  randomSeed(analogRead(A0));  // 이건 머시여
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  analogWrite(11, random(255)); //랜덤 우찌 쓰냐
+}
+
+그리고 3색 led 사용 !
+
+
+
+//week 4	피에조 스피커
+// 피에조 스피커는 능동 수동 두개
+// 다리 두개 길이가 같으면 + 표시 확인
+// 수동만 음계 확인가능
+// 키트확인해야함
+
+
+tone(핀 번호, 헤르츠, 재생 시간);
+// 핀번호 에 연결된 스피커로 헤르츠(음계)를 재생시간동안 출력
+// 재생 시간은 mile seconds 단위 / delay랑 같은 단위인감 ... ?
+
+noTone(핀 번호)
+// 핀 번호에 연결된 스피커의 소리를 끈다.
+
+
+// ---음계---
+// [4옥타브]
+// 도(C)  = 262Hz
+// 레(D)  = 294Hz
+// 미(E)  = 330Hz
+// 파(F)  = 349Hz
+// 솔(G)  = 392Hz
+// 라(A)  = 440Hz
+// 시(B)  = 494Hz
+
+// [5옥타브]
+// 도(C)  = 523Hz
+
+// 주파수(Hz)가 높을수록 높은 음
+// tone(피에조핀번호, 주파수);  // 소리 출력
+// noTone(피에조핀번호);       // 소리 끄기
+
+int melody[8] = {262,294,330,349,392,440,494,523};
+//배열로 사용
+
+음표 ....
+4분음표 	1000ms	1s	콩나무
+8분음표 	500		0.5	긴머리 콩나무
+16분음표	250		0.25	긴머리 두개 콩나무
+
+
+// [주파수 참고]
+// 도 = 262 / 레 = 294 / 미 = 330 / 파 = 349
+// 솔 = 392 / 라 = 440 / 시 = 494 / 높은 도 = 523
+// 높은 미 = 659 / 높은 레 = 587
+
+// [음계 배열] 각 음의 주파수(Hz)를 순서대로 저장
+int notes[] = {392,392,330,349,392,440,440,392,
+               392,523,659,587,523,587};
+
+// [시간 배열] 각 음을 재생할 시간(ms)
+// 500 = 0.5초 / 250 = 0.25초
+// 1000 = 1초 / 1500 = 1.5초
+int times[] = {500,500,250,250,500,500,500,1000,
+               500,500,500,250,250,1500};
+
+void setup() {
+  for(int i=0; i<14; i++) {
+    tone(8, notes[i], times[i]);
+    delay(times[i]+200);
+    noTone(8);
+  }
+}
+
+// 다음과 같이 노래 재생가능
+// 각 인덱스별 음,재생시간 매칭
+// 재생시간은 딜레이까지 생각해야함
+
+tone(8, notes[i], times[i]); // 8번 핀에서 해당 음을 정해진 시간만큼 재생
+
+delay(times[i]+200);
+// tone()은 소리를 시작하고 바로 다음 코드로 넘어가기 때문에 delay()에 time[i] 필요
+// times[i] = 해당 음표의 재생시간만큼 기다림
+// +200 = 소리가 끝난 뒤 0.2초 추가로 쉬어서 음과 음 사이 간격을 만듦
+// 예: 8분음표 500ms → 500ms 소리 + 200ms 쉼 = 총 700ms
+
+noTone(8); // 8번 핀 소리 중지 (재생시간 지정 시 생략 가능)
+
+// [4옥타브]
+// 도=262 / 레=294 / 미=330 / 파=349
+// 솔=392 / 라=440 / 시=494
+
+// [5옥타브]
+// 도=523 / 레=587 / 미=659 / 파=698
+// 솔=784 / 라=880 / 시=988
+
+// [6옥타브]
+// 도=1047 / 레=1175 / 미=1319 / 파=1397
+// 솔=1568 / 라=1760 / 시=1976
+
+// [7옥타브]
+// 도=2093 / 레=2349 / 미=2637 / 파=2794
+// 솔=3136 / 라=3520 / 시=3951
+
+// 주파수(Hz)가 높을수록 높은 음
+// 옥타브가 1 올라가면 주파수는 약 2배
+// tone(핀번호, 주파수, 재생시간);
+
+
+//week 4-2
+
+// 버튼 3개로 도·레·미 연주
+int pins[] = {2, 3, 4};       // 버튼 핀 번호
+int notes[] = {262, 294, 330}; // 도, 레, 미 주파수
+
+void setup() {
+  for (int i = 0; i < 3; i++) {
+    pinMode(pins[i], INPUT); // 버튼 3개 입력 설정
+  }
+}
+
+void loop() {
+  for (int i = 0; i < 3; i++) { // 버튼 3개 순서대로 검사
+    if (digitalRead(pins[i]) == HIGH) { // 버튼 입력이 HIGH이면
+      tone(8, notes[i], 100); // 8번 핀에서 해당 음 0.1초 재생
+      delay(100);             // tone은 바로 다음 코드로 넘어가므로 재생시간만큼 대기
+      noTone(8);              // 소리 중지
+    }
+  }
+}
+
+// pins[] = 버튼 핀 / notes[] = 음계 주파수
+// i<3 = 버튼 개수 / INPUT = 입력 설정
+// digitalRead() = 입력 확인 / HIGH = 1, LOW = 0
+// 버튼은 눌렀을 때 HIGH가 되도록 연결한 경우
+
+
+//week5	조도센서
+
+//조도센서 범위
+// 조도센서 analogRead() 범위: 0~1023
+// 0 = 최소 입력 전압 / 1023 = 최대 입력 전압
+// 밝을수록 값이 커지는지는 센서 연결 방식에 따라 달라짐
+// analogRead(A0); // A0 핀에서 조도센서 값 읽기
+
+map(analogRead(A0),0,1023,0,255);
+
+map(analogRead(A0), 0, 1023, 0, 255);
+// analogRead(A0) = A0핀의 조도센서 값 읽기
+// 0, 1023 = 입력 범위 (조도센서 측정값)
+// 0, 255 = 변환할 출력 범위 (LED PWM 밝기)
+// map() = 입력값을 원하는 범위로 변환
+
+map(a,기존 최소, 기존 최대, 목표 최소, 목표 최대);
+이걸해야지 조도 센서 값을 led에 매핑 시킬수있어
+시리얼 모니터로 확인 !
+
+보트라이트는 9600 세팅 . uno 기준
+void setup(){
+	Serial.begin(9600);
+	//시리얼 통신 속도 설정하기
+}
+
+void loop(){
+	int light = map(analogRead(A0), 0, 1023, 255, 0);
+	analogWrite(9, light);
+
+	char pr[12];		// char 배열 변수 => 문자열
+
+	// 출력 유이
+	sprintf(pr, "Light = %d", analogRead(A0));
+	Serial.println(pr);
+	
+	delay(200);
+}
+
+// ===== 시리얼 통신 함수 정리 =====
+
+// 1. Serial.begin(통신속도);
+// 아두이노와 PC의 시리얼 통신 시작
+// 시리얼 모니터의 보드레이트와 동일하게 설정
+// 예: Serial.begin(9600);
+
+// 2. Serial.println(출력값);
+// PC 시리얼 모니터에 값 출력 후 줄바꿈
+// Serial.print() = 줄바꿈 없이 출력
+// 예: Serial.println("Hello PC!");
+// 예: Serial.println(analogRead(A0));
+
+// 3. sprintf(저장변수, "출력형식", 입력값);
+// 숫자와 문자를 합쳐 원하는 형식의 문자열 생성
+// %d = 정수 / %f = 실수 / %s = 문자열
+// sprintf()는 문자열만 만들고 직접 출력하지 않음
+// 예: sprintf(pr, "Light = %d", light);
+
+
+//week 5-2		초음파센서
+
+//초음파 핀 4개 먼지도 설명 들어가야함
+vcc = 5v
+trig = 초음파 발생
+echo = 튕겨나오는 초음파 받아들이면 high
+gnd = ( - )
+
+trig ( low )	평상시
+echo ( low ) 평상시
+trig ( HIGH ) -> 초음파 발싸
+초음파 감시 -> echo ( high )
+
+거리는 시간으로 측정
+초음파 발사부터 다시 돌아올때까지 걸린 시간
+
+trig는 output
+echo는 input ?
+
+delayMicroseconds(10) // 아주 찰나 ? 이건 머냐
+
+
+
+// ===== 초음파 센서 거리 측정 =====
+// Trig = 2번 핀 (초음파 발사)
+// Echo = 3번 핀 (반사된 초음파 수신)
+
+void setup() {
+  pinMode(2, OUTPUT); // Trig = 출력
+  pinMode(3, INPUT);  // Echo = 입력
+  Serial.begin(9600); // PC 시리얼 통신 시작
+}
+
+void loop() {
+  // 1. 초음파 발사
+  digitalWrite(2, LOW);  // Trig 초기화
+  delayMicroseconds(2);  // 2마이크로초 대기
+  digitalWrite(2, HIGH); // 초음파 발사 신호 시작
+  delayMicroseconds(10); // 10마이크로초 동안 HIGH 유지
+  digitalWrite(2, LOW);  // 발사 신호 종료
+
+  // 2. 초음파 왕복 시간 측정
+  long duration = pulseIn(3, HIGH);
+  // pulseIn(핀번호, HIGH) = HIGH 펄스 유지시간 측정(μs)
+  // long = 큰 정수를 저장하는 자료형
+
+  if (duration == 0) {
+    return; // 초음파 응답이 없으면 이번 loop 종료
+  }
+
+  // 3. 거리 계산
+  long distance = duration / 58.2;
+  // 왕복시간(μs)을 거리(cm)로 변환
+  // 초음파 1cm 이동에 약 29.1μs
+  // 왕복이므로 29.1 × 2 = 58.2로 나눔
+
+  // 4. 시리얼 모니터 출력
+  char pr[24]; // 출력 문자열 저장 공간
+  sprintf(pr, "distance = %ld cm", distance);
+  // sprintf(저장변수, "출력형식", 입력값)
+  // %ld = long 정수 출력 형식
+
+  Serial.println(pr); // PC에 거리 출력
+  delay(200);         // 0.2초마다 반복
+}
+
+
+// ===== 시험용 함수 정리 =====
+// pinMode(핀, OUTPUT) = 출력 설정 (Trig)
+// pinMode(핀, INPUT)  = 입력 설정 (Echo)
+// digitalWrite(핀, HIGH) = HIGH 출력
+// digitalWrite(핀, LOW)  = LOW 출력
+// delayMicroseconds(10) = 0.00001초 대기
+// pulseIn(3, HIGH) = HIGH 펄스의 길이 측정(μs)
+// if(duration == 0) return; = 측정 실패 시 이번 반복 종료
+// distance = duration / 58.2 = 거리(cm) 계산
+// Serial.begin(9600) = 통신속도 설정
+// Serial.println(pr) = 시리얼 모니터 출력
+// delay(200) = 0.2초 대기
+
+// Trig = 초음파 발사 / Echo = 반사 신호 수신
+// pulseIn() = HIGH 유지시간 측정 (마이크로초)
+// 초음파 1cm 이동시간 = 약 29.1μs
+// 왕복 시간이므로 2로 나눠야 함
+// 29.1 × 2 = 58.2
+
+long duration = pulseIn(3, HIGH); // 초음파 왕복시간
+long distance = duration / 58.2;  // 거리(cm) 계산
+
+//week 6	서보 모터
+
+//아두이노 ide에서 툴바 -> 스케치 -> 인클루드 라이브러리 -> 써보
+#include <Servo.h>
+Servo myservo;	//이건 머꼬
+
+
+
+// ===== 서보모터 함수 정리 =====
+// #include <Servo.h> = 서보모터 라이브러리 불러오기
+// Servo myservo; = 서보모터 객체(변수) 선언
+// myservo.attach(핀번호) = 서보모터 연결 핀 지정
+// myservo.write(각도) = 서보모터 회전 (보통 0~180도)
+// delay(시간) = 모터가 움직일 시간 확보 (ms)
+
+#include <Servo.h>
+Servo myservo;
+
+void setup() {
+  myservo.attach(9); // 서보모터를 9번 핀에 연결
+}
+
+void loop() {
+
+  // 1. 특정 각도로 회전
+  myservo.write(90); // 90도로 이동
+  delay(1000);       // 이동할 시간 확보 + 1초 대기
+
+
+  // 2. 두 각도 반복 이동
+  myservo.write(120); // 120도로 이동
+  delay(1000);        // 1초 대기
+  myservo.write(0);   // 0도로 이동
+  delay(1000);        // 1초 대기
+
+
+  // 3. 서서히 회전하기
+  for (int i = 0; i < 120; i++) {
+    // i=0 시작 / i<120 = 119까지 / i++ = 1씩 증가
+    myservo.write(i); // 0도부터 119도까지 1도씩 회전
+    delay(15);        // 각도 변경 후 0.015초 대기
+                       // 모터가 움직일 시간 확보
+  }
+
+  myservo.write(0); // 다시 0도로 이동
+  delay(1000);      // 1초 대기 후 반복
+}
+
+// ===== 시험 수정 포인트 =====
+// attach(9) = 서보모터 연결 핀 번호
+// write(90) = 회전할 목표 각도
+// i<120 = 0~119도 반복 (120도 포함은 i<=120)
+// i++ = 1도씩 증가 / i-- = 1도씩 감소
+// delay(15) = 1도 이동 명령마다 0.015초 대기
+// delay(1000) = 1초 대기
+// write()는 목표 각도를 명령하고 바로 다음 코드로 넘어감
+// 따라서 모터가 이동할 시간을 delay()로 확보

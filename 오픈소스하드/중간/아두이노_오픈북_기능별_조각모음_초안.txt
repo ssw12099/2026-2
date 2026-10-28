@@ -1,0 +1,1139 @@
+﻿아두이노 오픈북 기능별 조각모음
+초안 v1 | Arduino UNO R3 기준 | 60분 실습 및 보고서 대비
+
+이 파일은 처음부터 외우는 교재가 아니라, 문제의 기능을 찾아 코드에 붙이는 설명서다.
+앞부분은 기능별 조각, 뒷부분은 시험 예시 1~5단계 통합 코드와 보고서 틀이다.
+메모장의 Ctrl+F로 [조도], [버튼전환], [상태유지]처럼 대괄호까지 검색한다.
+설명까지 통째로 Arduino IDE에 붙이지 말고, 각 '코드 시작~코드 끝' 사이만 복사한다.
+
+먼저 알아둘 전제
+• 시험 예시 Word에는 공통 핀 배치표를 따르라고 쓰여 있지만 실제 핀 표는 없다.
+  이 파일의 핀 번호는 연습용이다. 시험 당일 지급되는 핀 표와 실제 배선이 우선이다.
+• 조도값이 클수록 밝은 회로, 공통 음극 RGB, 버튼 외부 풀다운 회로를 기본으로 한다.
+• 첨부 강의자료의 개별 실습을 함께 쓸 수 있게 변수명과 핀을 통일했다.
+• [보완] 표시는 메모에 부족하거나 시험 구현에 필요해서 덧붙인 설명이다.
+• 통합 코드는 논리와 C++ 문법을 점검한 연습용이다. 실제 보드 업로드와 회로 동작은
+  별도 확인해야 한다. 하드웨어 없는 검사는 전기적 동작까지 보장하지 않는다.
+
+======================================================================
+[찾기] 문제 문장으로 바로 찾는 색인
+======================================================================
+"켜라 / 꺼라 / 깜빡여라"              → [LED]
+"서서히 밝게 / 어둡게"                → [페이드]
+"누르는 동안 켜라"                    → [버튼누름]
+"누를 때마다 바꿔라"                  → [버튼전환]  ※ 누르는 동안과 다름
+"빨강 / 초록 / 파랑 / 보라"            → [RGB]
+"랜덤한 색 / 버튼마다 색 농도 증가"    → [RGB응용]
+"어두울수록 밝게 / map 사용"          → [조도]
+"300 미만 / 300~699 / 700 이상"       → [구간]
+"값 출력 / 한 줄 출력"                → [시리얼]
+"0.2초마다 / 기다리는 중에도 버튼"     → [주기]
+"도레미 / 알림음 / 배열과 for문"       → [소리] [멜로디]
+"몇 cm / 사람이 있으면"               → [거리] [재실]
+"가까울수록 빠른 삐삐"                → [거리소리]
+"90도로 / 천천히 회전"                → [서보]
+"가변저항으로 각도 조절"               → [가변저항]
+"700에 닫고 600 미만에 열고 중간 유지" → [상태유지]
+"바뀌는 순간에만 1회"                 → [변경알림]
+"AUTO / MANUAL / 현재 위치 고정"      → [수동모드]
+"시험 예시를 단계별로 완성"            → [시험조립] [통합코드]
+"보고서 빨리 작성"                    → [보고서]
+"안 된다 / 오류 / 색이 반대"           → [문제해결]
+"메모에 없던 PDF 내용"                 → [보완목록]
+
+======================================================================
+[붙이는법] 코드 조각을 합치는 방법
+======================================================================
+프로그램에는 setup() 1개, loop() 1개만 둔다.
+조각마다 있는 setup과 loop를 통째로 여러 번 붙이지 않는다.
+
+① [전역] : 맨 위. 핀 번호, 기억할 상태, 라이브러리를 넣는다.
+② [setup] : void setup() { ... } 안. 시작할 때 한 번만 하는 설정이다.
+③ [loop] : void loop() { ... } 안. 계속 반복할 동작이다.
+④ [함수] : setup과 loop 바깥. 이름을 불러 재사용하는 코드 묶음이다.
+
+기본 틀 — 코드 시작
+// ① 전역 선언
+
+// ④ 보조 함수는 이 위치에 넣어도 된다.
+
+void setup() {
+  // ② 설정
+}
+
+void loop() {
+  // ③ 반복 동작
+}
+코드 끝
+
+합치는 순서
+1. 필요한 부품의 전역 선언을 모은다. 같은 이름은 한 번만 선언한다.
+2. 각 부품의 설정을 setup 안에 모은다.
+3. loop에서 센서 읽기 → 조건 판단 → 출력 → 시리얼 순으로 배치한다.
+4. RGB나 서보처럼 같은 출력을 여러 조각에서 덮어쓰지 않는지 확인한다.
+5. 한 기능이 되면 저장하고 다음 기능을 더한다.
+
+기억할 상태는 전역에 둔다.
+  bool manualMode = false;     // loop가 끝나도 기억
+loop 안에 bool manualMode = false;를 넣으면 매번 AUTO로 초기화된다.
+
+======================================================================
+[배선] 연습용 공통 핀과 회로
+======================================================================
+부품            이름          연습용 핀     연결 및 주의
+조도            LIGHT_PIN     A0            5V—조도센서—A0 접점—10kΩ—GND
+무드등 LED      MOOD_PIN      5             D5—220Ω—LED (+), LED (-)—GND
+RGB 빨강        RED_PIN       9             각 색 다리에 각각 220Ω 직렬
+RGB 초록        GREEN_PIN     10            공통 음극은 GND
+RGB 파랑        BLUE_PIN      11            색 다리 순서는 부품 표시로 확인
+수동 피에조     BUZZER_PIN    8             (+) D8, (-) GND
+서보 신호       SERVO_PIN     6             전원 5V, GND 공통, 신호 D6
+버튼            BUTTON_PIN    4             D4—10kΩ—GND, 누르면 D4와 5V 연결
+초음파 Trig     TRIG_PIN      2             OUTPUT
+초음파 Echo     ECHO_PIN      3             INPUT
+초음파 전원                   5V / GND      센서의 인쇄된 핀 이름 확인
+
+전원을 끄고 배선한다. 브레드보드 중앙 홈 양쪽은 연결되지 않는다.
+LED 다리를 같은 연결 줄에 꽂지 않는다. 전원 레일이 중간에 끊긴 제품도 있다.
+버튼 4개 다리는 같은 쪽 두 다리가 원래 연결된 경우가 있어 방향을 확인한다.
+서보 전원 부족으로 보드가 재시작되면 적절한 별도 전원을 쓰고 GND를 공통 연결한다.
+
+[보완] UNO R3에서 여러 부품을 합칠 때
+• analogRead 입력은 0~1023, analogWrite 밝기는 0~255이다.
+• PWM 핀은 3, 5, 6, 9, 10, 11. ~ 표시는 PWM 출력 지원을 뜻한다.
+• Servo를 attach하면 9·10번 PWM, tone을 쓰면 3·11번 PWM과 충돌할 수 있다.
+• 따라서 통합 예시는 무드등 PWM을 D5에 두고 RGB는 digitalWrite로 색만 켠다.
+  RGB의 단순 ON/OFF는 중간 밝기 PWM과 다르다. 서보 신호 D6는 PWM 핀일 필요 없다.
+• [RGB응용]의 랜덤 중간 밝기는 RGB 단독 실습용이다. 통합 예시에 그대로 합치지 않는다.
+• 시험 핀 표가 다르면 임의로 표를 무시하지 말고 지정 핀 및 보드에서 충돌을 확인한다.
+
+======================================================================
+[문법] 시험 중 자주 헷갈리는 것
+======================================================================
+// 설명          주석. 메모에 있던 '#설명'은 C++ 주석이 아니다.
+#include         라이브러리를 불러오는 특별한 지시문. #include <Servo.h>는 정상.
+;                일반 문장의 끝. pinMode(5, OUTPUT);
+=                저장. angle = 90;
+==               같은지 비교. if (angle == 90)
+!=               다른지 비교. if (nextAngle != angle)
+&&               그리고. distance > 0 && distance <= 30
+||               또는. light < 300 || light >= 700
+!                반대로. manualMode = !manualMode;
+< / <=           미만 / 이하. 30cm 이내는 <= 30
+> / >=           초과 / 이상. 700 이상은 >= 700
+bool             true 또는 false 저장
+int              일반 정수. 센서값 0~1023 등
+unsigned long    millis() 시간 또는 pulseIn() 시간 보관
+float            소수 보관. 30.5cm처럼 거리 경계 판단할 때 유용
+
+for (int i = 0; i < 3; i++) : i는 0, 1, 2. 총 3회.
+배열 첫 칸은 [0]. int notes[3]이면 [0], [1], [2]만 있다.
+for 괄호 안에서 선언한 i는 그 for 밖에서 사용할 수 없다.
+if / else if / else를 쓰면 한 구간만 실행된다. If가 아니라 소문자 if이다.
+return은 현재 함수에서 나간다. loop에서 return해도 보드 프로그램이 영구 종료되지는 않는다.
+
+시간 단위
+  delay(200)               = 200ms = 0.2초
+  delayMicroseconds(10)    = 10μs = 0.00001초
+  millis()                = 시작 후 지난 시간(ms)
+  tone(8, 523, 200)        = 523Hz 음을 200ms 동안. 523은 시간 아닌 음높이.
+
+======================================================================
+[LED] 켜기 끄기 깜빡임
+======================================================================
+필요할 때 : "LED를 켜라", "1초 간격으로 깜빡여라"
+연결 : [배선]의 무드등 LED. 바꿀 것 : 핀 번호, delay 숫자.
+
+[전역] 코드 시작
+const int MOOD_PIN = 5;
+코드 끝
+[setup] 코드 시작
+pinMode(MOOD_PIN, OUTPUT);
+코드 끝
+[loop] 코드 시작
+digitalWrite(MOOD_PIN, HIGH); // 켜기
+delay(1000);                 // 켠 채 1초
+digitalWrite(MOOD_PIN, LOW);  // 끄기
+delay(1000);                 // 끈 채 1초
+코드 끝
+확인 : 켜짐 1초 + 꺼짐 1초이므로 한 주기는 2초다.
+주의 : delay 동안 일반적인 센서 읽기와 버튼 확인은 진행하지 못한다.
+
+LED 3개를 순서대로 켜려면 — 독립 실습
+[전역] 코드 시작
+const int lamps[3] = {9, 10, 11};
+코드 끝
+[setup] 코드 시작
+for (int i = 0; i < 3; i++) pinMode(lamps[i], OUTPUT);
+코드 끝
+[loop] 코드 시작
+for (int i = 0; i < 3; i++) {
+  digitalWrite(lamps[i], HIGH);
+  delay(1000);
+  digitalWrite(lamps[i], LOW);
+}
+코드 끝
+각 핀에 단색 LED와 저항을 연결한다. RGB 핀과 동시에 중복 사용하지 않는다.
+
+======================================================================
+[페이드] 밝기 지정 및 서서히 변화
+======================================================================
+준비 : [LED]의 전역과 setup. MOOD_PIN은 PWM 핀이어야 한다.
+0=꺼짐, 128=중간 출력, 255=최대 출력. 체감 밝기가 숫자와 정확히 비례하진 않는다.
+
+[loop] 코드 시작
+for (int i = 0; i <= 255; i++) {
+  analogWrite(MOOD_PIN, i);
+  delay(10);
+}
+for (int i = 255; i >= 0; i--) {
+  analogWrite(MOOD_PIN, i);
+  delay(10);
+}
+코드 끝
+바꿀 것 : delay(10)을 크게 하면 느려진다. 한 방향 약 2.56초.
+고정 밝기만 필요하면 위 loop 조각 대신 analogWrite(MOOD_PIN, 128);만 쓴다.
+여러 LED 파도타기 : [LED] lamps 배열을 PWM 핀으로 정하고 각 핀에 위 두 for문을 적용.
+센서와 버튼을 동시에 처리하는 통합 문제에는 긴 페이드 반복을 그대로 넣지 않는다.
+
+======================================================================
+[버튼누름] 누르고 있는 동안만 켜기
+======================================================================
+외부 풀다운 : 안 누름 LOW, 누름 HIGH. 이 문서와 강의 예시의 기본이다.
+[전역] 코드 시작
+const int BUTTON_PIN = 4;
+const int MOOD_PIN = 5;
+코드 끝
+[setup] 코드 시작
+pinMode(BUTTON_PIN, INPUT);
+pinMode(MOOD_PIN, OUTPUT);
+코드 끝
+[loop] 코드 시작
+bool pressed = (digitalRead(BUTTON_PIN) == HIGH);
+digitalWrite(MOOD_PIN, pressed ? HIGH : LOW);
+코드 끝
+pressed ? HIGH : LOW = 눌렸으면 HIGH, 아니면 LOW.
+버튼을 떼면 바로 꺼지는지 확인한다.
+
+[대체 회로] INPUT_PULLUP을 사용한다면
+• 버튼은 입력 핀과 GND 사이. setup은 pinMode(BUTTON_PIN, INPUT_PULLUP);
+• 안 누름 HIGH, 누름 LOW. 조건도 digitalRead(BUTTON_PIN) == LOW로 바꾼다.
+• 기존 풀다운 회로와 코드를 무심코 섞지 않는다. 시험 지정 회로를 우선한다.
+
+======================================================================
+[버튼전환] 누를 때마다 딱 한 번 AUTO와 MANUAL 바꾸기
+======================================================================
+[보완] HIGH인 동안 계속 뒤집으면 길게 누를 때 모드가 여러 번 바뀐다.
+'이전에는 안 눌림 → 지금 눌림' 순간을 잡고, 접점 흔들림(채터링)도 제거한다.
+이 조각은 [버튼누름] loop를 대체한다. loop에 긴 delay를 넣지 않는다.
+
+[전역] 코드 시작
+const int BUTTON_PIN = 4;
+const int PRESSED = HIGH;       // 풀다운 HIGH / 풀업 LOW
+bool manualMode = false;       // false=AUTO, true=MANUAL
+int lastRaw = LOW;
+int stableButton = LOW;
+unsigned long changedAt = 0;
+코드 끝
+[setup] 코드 시작
+pinMode(BUTTON_PIN, INPUT);     // 풀업이면 INPUT_PULLUP
+lastRaw = stableButton = digitalRead(BUTTON_PIN);
+코드 끝
+[loop] 코드 시작
+int raw = digitalRead(BUTTON_PIN);
+if (raw != lastRaw) {
+  lastRaw = raw;
+  changedAt = millis();
+}
+if (millis() - changedAt >= 30 && raw != stableButton) {
+  stableButton = raw;          // 30ms 이상 유지된 입력만 인정
+  if (stableButton == PRESSED) {
+    manualMode = !manualMode;
+    // 여기에 모드 출력, 전환 멜로디 시작 등을 넣는다.
+  }
+}
+코드 끝
+확인 : 2초간 누르고 있어도 한 번만 전환. 떼었다 다시 누르면 또 한 번 전환.
+30ms보다 매우 짧은 누름은 무시된다. 시작할 때 이미 누른 버튼은 새 누름으로 보지 않는다.
+
+======================================================================
+[RGB] 빨강 초록 파랑 보라색 만들기
+======================================================================
+RGB는 한 부품 안에 R/G/B LED가 들어 있다. 이전 색을 끄지 않으면 색이 섞인다.
+공통 음극(GND) 기준. 통합 문제의 구간 표시에는 ON/OFF만으로 충분하다.
+
+[전역] 코드 시작
+const int RED_PIN = 9, GREEN_PIN = 10, BLUE_PIN = 11;
+const bool COMMON_ANODE = false; // 공통 양극(+5V)이면 true
+코드 끝
+[함수] 코드 시작
+void setRGB(bool r, bool g, bool b) {
+  digitalWrite(RED_PIN,   COMMON_ANODE ? !r : r);
+  digitalWrite(GREEN_PIN, COMMON_ANODE ? !g : g);
+  digitalWrite(BLUE_PIN,  COMMON_ANODE ? !b : b);
+}
+코드 끝
+[setup] 코드 시작
+pinMode(RED_PIN, OUTPUT);
+pinMode(GREEN_PIN, OUTPUT);
+pinMode(BLUE_PIN, OUTPUT);
+setRGB(false, false, false);
+코드 끝
+[loop에서 필요한 한 줄만 선택]
+setRGB(true,  false, false);  // 빨강
+setRGB(false, true,  false);  // 초록
+setRGB(false, false, true);   // 파랑
+setRGB(true,  false, true);   // 보라 = 빨강 + 파랑
+setRGB(true,  true,  false);  // 노랑 = 빨강 + 초록
+setRGB(false, true,  true);   // 청록 = 초록 + 파랑
+setRGB(true,  true,  true);   // 흰색
+setRGB(false, false, false);  // 끄기
+주의 : 이 줄들을 전부 연달아 넣으면 마지막 '끄기'만 유지된다.
+
+======================================================================
+[RGB응용] 랜덤 색과 버튼으로 색 농도 바꾸기
+======================================================================
+[보완] PDF 03의 랜덤 색, 버튼별 밝기 증가. 아래는 Servo/tone 없는 독립 실습.
+[RGB]의 전역과 setup을 사용하되, loop의 setRGB 대신 아래 PWM 조각을 사용한다.
+
+랜덤 색 — [setup 추가]
+randomSeed(analogRead(A1)); // 이 예제에서는 연결하지 않은 A1을 사용
+[loop] 코드 시작
+int r = random(256); // 0~255. random(255)는 0~254
+int g = random(256);
+int b = random(256);
+analogWrite(RED_PIN,   COMMON_ANODE ? 255-r : r);
+analogWrite(GREEN_PIN, COMMON_ANODE ? 255-g : g);
+analogWrite(BLUE_PIN,  COMMON_ANODE ? 255-b : b);
+delay(500);
+코드 끝
+randomSeed는 난수의 출발점 설정이다. 매 loop마다 초기화할 필요 없다.
+
+버튼 하나로 빨강을 단계적으로 밝게 — [버튼전환]과 결합
+전역에 int redLevel = 0; 추가.
+[버튼전환]의 manualMode = !manualMode; 줄을 아래로 교체한다.
+코드 시작
+redLevel += 51;                 // 0→51→102→153→204→255→0
+if (redLevel > 255) redLevel = 0;
+analogWrite(RED_PIN, COMMON_ANODE ? 255-redLevel : redLevel);
+코드 끝
+이때 안 쓰는 초록·파랑은 꺼 둔다. 버튼 3개로 확장하려면 각 버튼에 이전/안정 상태와
+변경 시간을 따로 두고, 빨강·초록·파랑 변수도 따로 관리한다.
+
+======================================================================
+[조도] 조도 읽기와 어두울수록 밝은 무드등
+======================================================================
+전제 : 5V 쪽에 조도센서, GND 쪽에 10kΩ 저항. 접점을 A0에 연결.
+손으로 가렸을 때 값이 작아지는지 먼저 시리얼로 확인한다.
+
+[전역] 코드 시작
+const int LIGHT_PIN = A0;
+const int MOOD_PIN = 5;
+코드 끝
+[setup] 코드 시작
+pinMode(MOOD_PIN, OUTPUT);
+Serial.begin(9600);
+코드 끝
+[loop] 코드 시작
+int light = analogRead(LIGHT_PIN);          // 원본 조도값 0~1023
+int brightness = map(light, 0, 1023, 255, 0);
+analogWrite(MOOD_PIN, brightness);          // LED 밝기 0~255
+Serial.print("Light = ");
+Serial.println(light);                     // 밝기 아닌 원본 센서값 출력
+delay(200);
+코드 끝
+바꿀 것 : 센서 핀, LED 핀, 출력 주기.
+map(값, 원래최소, 원래최대, 목표최소, 목표최대)
+0은 255로, 1023은 0으로 바꾼다. 중간 값은 중간 밝기가 된다.
+배선이 반대라 어두울수록 값이 커지면 map 끝을 0,255로 바꾸어야 한다.
+단, 시험의 300/700 구간도 함께 해석해야 하므로 먼저 지정 회로를 맞추는 편이 좋다.
+map은 정수 계산이고 범위를 자동 제한하지 않는다. 센서 보정 범위를 별도로 썼다면
+brightness = constrain(brightness, 0, 255);로 제한한다.
+다른 기능과 합칠 때 delay(200)은 [주기] 방식으로 바꾼다.
+
+======================================================================
+[구간] 조도에 따라 RGB 표시하기
+======================================================================
+준비 : [조도]에서 int light를 읽은 뒤, [RGB] 함수와 설정을 추가한다.
+[loop의 조도 읽기 다음] 코드 시작
+if (light < 300) {
+  setRGB(false, false, true);      // 0~299 파랑
+} else if (light < 700) {
+  setRGB(false, true, false);      // 300~699 초록
+} else {
+  setRGB(true, false, false);      // 700~1023 빨강
+}
+코드 끝
+확인값 : 299 파랑 / 300 초록 / 699 초록 / 700 빨강.
+둘째 조건은 첫째 조건을 통과한 상태라 light >= 300을 다시 쓸 필요 없다.
+MANUAL 보라색까지 합칠 때는 [수동모드]처럼 우선순위를 한곳에서 결정한다.
+
+======================================================================
+[시리얼] 센서값과 모드를 한 줄로 출력하기
+======================================================================
+[setup] Serial.begin(9600); 한 번. 시리얼 모니터도 9600으로 맞춘다.
+print는 같은 줄에 이어 쓰고, println은 쓰고 나서 줄을 바꾼다.
+
+조도 한 줄 — [loop, int light를 읽은 뒤]
+Serial.print("Light = ");
+Serial.println(light);
+
+모드가 바뀌는 순간만 — [버튼전환]의 뒤집기 다음에 추가
+Serial.print("MODE: ");
+Serial.println(manualMode ? "MANUAL" : "AUTO");
+
+세 값 한 줄 — [조도], [거리], [버튼전환]을 준비하고 loop에 추가
+코드 시작
+Serial.print("Light = ");
+Serial.print(light);
+Serial.print(", Dist = ");
+if (distance < 0) Serial.print("NA");
+else Serial.print(distance, 1);      // float 거리, 소수 1자리
+Serial.print(" cm, Mode = ");
+Serial.println(manualMode ? "MANUAL" : "AUTO");
+코드 끝
+예 : Light = 230, Dist = 15.0 cm, Mode = AUTO
+측정 실패는 0cm 대신 NA로 구별한다. 예시의 15와 15.0은 같은 거리 표현이다.
+
+강의의 sprintf를 써야 한다면 — 정수 조도 출력
+코드 시작
+char pr[24];
+sprintf(pr, "Light = %d", light);
+Serial.println(pr);
+코드 끝
+%d=int, %ld=long, %lu=unsigned long. 문자열 끝의 빈 문자 자리까지 필요하다.
+"Light = 1023"은 12글자라 char pr[12]는 작다. 넉넉히 [24]로 둔다.
+UNO의 일반 sprintf는 %f 실수 출력을 기본 지원하지 않는 경우가 있어
+실수 거리는 Serial.print(distance, 1)을 쓰는 편이 간단하다.
+
+======================================================================
+[주기] 0.2초마다 처리하면서 버튼은 계속 확인하기
+======================================================================
+[보완] delay(200)을 쓰면 기다리는 동안 버튼을 놓칠 수 있다.
+millis로 '200ms가 지났는지'만 확인하면 나머지 시간에도 다른 일을 할 수 있다.
+
+[전역] 코드 시작
+unsigned long lastSample = 0;
+const unsigned long SAMPLE_MS = 200;
+코드 끝
+[loop] 코드 시작
+// [버튼전환] 조각은 이 if 밖에 둔다.
+unsigned long now = millis();
+if (now - lastSample >= SAMPLE_MS) {
+  lastSample = now;
+  // 여기에 조도 읽기 → 출력 제어 → 시리얼 출력 조각을 넣는다.
+}
+// 비차단 멜로디 갱신도 이 if 밖에서 계속 실행한다.
+코드 끝
+lastSample을 전역에 두어야 이전 시간을 기억한다.
+이것은 200ms를 기준으로 실행하는 방식이다. pulseIn 같은 대기 함수가 끼면 약간의
+지연이 생긴다. 긴 delay나 반복 연주를 넣으면 일정 주기가 크게 깨진다.
+
+======================================================================
+[소리] 한 음 재생하기
+======================================================================
+연결 : 수동 피에조 (+) D8, (-) GND. 능동 부저는 원하는 음계 연주에 맞지 않을 수 있다.
+[전역] const int BUZZER_PIN = 8;
+
+[loop 또는 조건 안에서 필요한 줄 선택]
+tone(BUZZER_PIN, 523, 200);  // 높은 도, 0.2초; 바로 다음 코드로 넘어감
+noTone(BUZZER_PIN);         // 지금 소리 끄기
+
+주의 : 두 줄을 바로 연속 실행하면 거의 들리기 전에 꺼진다.
+재생 시간 지정 시 자연 종료된다. '한 번만'이면 [변경알림] 조건 안에서 호출한다.
+조건이 참인 매 loop마다 tone을 다시 시작하면 반복 알림처럼 들린다.
+
+음계표 Hz
+옥타브     도    레    미    파    솔    라    시
+4          262   294   330   349   392   440   494
+5          523   587   659   698   784   880   988
+6         1047  1175  1319  1397  1568  1760  1976
+7         2093  2349  2637  2794  3136  3520  3951
+
+음표 시간은 템포에 따라 달라진다. 4분음표=항상 1000ms는 아니다.
+예 : 120 BPM이면 4분=500ms, 8분=250ms, 16분=125ms.
+시험이 지정한 재생 시간이 있으면 그 숫자를 우선한다.
+
+======================================================================
+[멜로디] 배열과 for문으로 차례대로 연주
+======================================================================
+쉽게 이해하는 독립 실습용. 다른 기능이 연주 중 잠시 멈춰도 될 때 사용한다.
+[소리]의 BUZZER_PIN 선언을 준비한다.
+
+[전역] 코드 시작
+const int notes[] = {262, 330, 392}; // 도 미 솔
+const int times[] = {200, 200, 200};
+코드 끝
+[함수] 코드 시작
+void playMelody() {
+  for (int i = 0; i < 3; i++) {
+    tone(BUZZER_PIN, notes[i], times[i]);
+    delay(times[i] + 50); // 음 길이 + 음 사이 50ms
+  }
+  noTone(BUZZER_PIN);
+}
+코드 끝
+[호출] setup에서 playMelody(); → 시작 시 1회.
+       loop에서 playMelody(); → 무한 반복. 시험 전환음이면 전환 조건 안에서만.
+MANUAL 진입은 notes를 {392, 330, 262}, AUTO 복귀는 {262, 330, 392}.
+배열 길이와 i < 3을 같이 바꾼다. 쉼표가 필요하면 해당 구간은 tone 대신 noTone.
+
+주의 : 이 함수는 약 0.75초 동안 다른 처리를 멈춘다.
+0.2초 출력과 버튼 반응을 같이 지키려면 [통합코드]의 startMelody/updateSound를 쓴다.
+통합 버전도 배열과 for문으로 음 순서를 준비하되, 실제 연주는 millis로 이어간다.
+
+버튼 3개로 도레미 — 독립 실습용
+[전역] 코드 시작
+const int BUZZER_PIN = 8;
+const int keys[] = {2, 3, 4};
+const int pitches[] = {262, 294, 330};
+코드 끝
+[setup] 코드 시작
+for (int i = 0; i < 3; i++) pinMode(keys[i], INPUT);
+코드 끝
+[loop] 코드 시작
+int selected = -1;
+for (int i = 0; i < 3; i++) {
+  if (digitalRead(keys[i]) == HIGH) {
+    selected = i;
+    break;                         // 여러 버튼이면 낮은 번호 우선
+  }
+}
+if (selected >= 0) tone(BUZZER_PIN, pitches[selected]);
+else noTone(BUZZER_PIN);
+코드 끝
+각 버튼은 풀다운 회로. 떼면 소리가 멈춘다. 초음파 2·3번 핀과 동시에 쓰지 않는다.
+
+======================================================================
+[거리] 초음파 거리 측정
+======================================================================
+VCC=5V, GND=GND, Trig=발사 명령(OUTPUT), Echo=돌아온 신호 시간(INPUT).
+pulseIn은 Echo가 HIGH로 유지된 펄스 폭을 μs로 잰다.
+
+[전역] 코드 시작
+const int TRIG_PIN = 2, ECHO_PIN = 3;
+코드 끝
+[setup] 코드 시작
+pinMode(TRIG_PIN, OUTPUT);
+pinMode(ECHO_PIN, INPUT);
+digitalWrite(TRIG_PIN, LOW);
+코드 끝
+[함수] 코드 시작
+float readDistanceCm() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  unsigned long duration = pulseIn(ECHO_PIN, HIGH, 25000UL);
+  if (duration == 0) return -1.0; // 실패 표시. 실제 -1cm라는 뜻 아님
+  return duration / 58.2;        // 왕복 시간이므로 편도 거리로 변환
+}
+코드 끝
+[loop의 200ms 처리 안] 코드 시작
+float distance = readDistanceCm();
+코드 끝
+바꿀 것 : 핀 번호. 25000μs 타임아웃은 응답이 없을 때 오래 멈추지 않도록 한 보완이다.
+초음파 호출은 200ms마다 한 번만 한다. 실패하면 다른 센서 기능까지 종료하지 않는다.
+float로 비교해야 30.9cm를 정수 30cm로 잘라 '30 이내'로 오판하지 않는다.
+
+======================================================================
+[재실] 30cm 이내에서만 무드등 동작
+======================================================================
+준비 : [조도] brightness 계산, [거리] distance 측정.
+[조도]의 analogWrite 줄을 아래로 교체한다.
+코드 시작
+bool occupied = (distance > 0 && distance <= 30.0);
+analogWrite(MOOD_PIN, occupied ? brightness : 0);
+코드 끝
+distance=-1(측정 실패)도 꺼짐 처리. 이는 이 초안에서 정한 실패 처리 정책이다.
+"이내"는 <=, "미만"은 <. 30cm는 켜지고 30.1cm는 꺼져야 한다.
+시험 5단계의 재실 조건은 무드등에만 적용한다. 사람이 없다고 서보/RGB까지 끄지 않는다.
+
+======================================================================
+[거리소리] 거리에 따라 음높이 또는 삐삐 간격 변경
+======================================================================
+준비 : [거리]의 함수와 설정, [소리] BUZZER_PIN.
+아래는 독립 실습용 loop 조각. 거리 읽기부터 넣는다.
+
+음높이 — 코드 시작
+float distance = readDistanceCm();
+if (distance <= 0 || distance >= 30) noTone(BUZZER_PIN);
+else if (distance < 10) tone(BUZZER_PIN, 262); // 도
+else if (distance < 20) tone(BUZZER_PIN, 330); // 미
+else tone(BUZZER_PIN, 392);                   // 솔
+delay(100);
+코드 끝
+이 예제는 '10 미만 도 / 20 미만 미 / 30 미만 솔'로 통일했다.
+강의 PDF 5_3은 설명과 일부 코드의 음계가 서로 다르므로 문제의 지정 음계를 우선한다.
+
+간격 — 코드 시작
+float distance = readDistanceCm();
+if (distance > 0 && distance < 30) {
+  int gap;
+  if (distance < 10) gap = 80;
+  else if (distance < 20) gap = 300;
+  else gap = 600;
+  tone(BUZZER_PIN, 523, 50); // 삐 길이는 50ms로 고정
+  delay(50 + gap);          // 소리 후 쉬는 시간이 거리별로 다름
+} else {
+  noTone(BUZZER_PIN);
+  delay(100);
+}
+코드 끝
+가까울수록 gap이 작아 삐삐가 빠르다. 이 코드는 기다림이 있어 통합 시험용에는
+그대로 추가하지 않는다. 통합에는 [주기]와 같은 시간 상태 관리가 필요하다.
+
+======================================================================
+[서보] 지정 각도와 서서히 회전
+======================================================================
+[전역] 코드 시작
+#include <Servo.h>
+Servo blind;                  // 서보를 조작할 이름을 하나 만든다.
+const int SERVO_PIN = 6;
+코드 끝
+[setup] 코드 시작
+blind.attach(SERVO_PIN);       // 신호선 핀 지정
+blind.write(0);               // 시작 위치
+코드 끝
+[loop에서 필요한 한 줄]
+blind.write(90);              // 목표 90도. 실제 도착을 기다리지는 않는다.
+
+서서히 0→120도→0도 반복 — 독립 실습 loop
+코드 시작
+for (int angle = 0; angle <= 120; angle++) {
+  blind.write(angle);
+  delay(15);
+}
+for (int angle = 120; angle >= 0; angle--) {
+  blind.write(angle);
+  delay(15);
+}
+코드 끝
+i < 120이면 119까지만 간다. 120을 포함하려면 <= 120.
+일반 각도형 서보 기준이다. 연속회전 서보는 같은 각도 명령의 의미가 다르다.
+
+센서 하나로 단순 열기 — loop 예시
+int light = analogRead(A0);
+if (light < 300) blind.write(90);
+else blind.write(0);
+
+초음파 차단기 — [거리]를 함께 준비하고 loop에 추가
+float distance = readDistanceCm();
+if (distance > 0 && distance < 30) blind.write(90);
+else blind.write(0);
+
+PDF에는 90도·180도 과제가 함께 나온다. 요구 각도로 숫자를 바꾼다.
+'600~699 유지'까지 있는 문제는 위 단순 if/else가 아니라 다음 [상태유지]를 쓴다.
+
+======================================================================
+[가변저항] 손잡이로 서보 각도 조절
+======================================================================
+[보완] 서보 PDF에 있지만 수업 메모에 없던 내용.
+가변저항 바깥 두 핀은 5V/GND, 가운데 핀은 A1. [서보] 선언/setup을 사용한다.
+[loop] 코드 시작
+int knob = analogRead(A1);
+int angle = map(knob, 0, 1023, 0, 180);
+blind.write(angle);
+delay(15);
+코드 끝
+조도센서는 A0, 가변저항은 A1로 분리했다. 강의 단독 실습은 가변저항도 A0 사용.
+바깥 두 핀을 반대로 연결하면 손잡이 방향과 각도 증가 방향이 뒤집힌다.
+
+======================================================================
+[상태유지] 닫힘과 열림 기준이 다를 때
+======================================================================
+시험 조건 : 700 이상 닫힘 90도 / 600 미만 열림 0도 / 600~699 현재 상태 유지.
+[서보]에 더한다. 조도 light는 [조도]에서 먼저 읽는다.
+
+[전역] 코드 시작
+int blindAngle = 0;           // 현재 '명령한' 각도 기억, 실제 각도 측정값은 아님
+코드 끝
+[loop, 조도 읽은 다음] 코드 시작
+int nextAngle = blindAngle;   // 기본값은 지금 상태
+if (light >= 700) nextAngle = 90;
+else if (light < 600) nextAngle = 0;
+// 600~699는 바꾸지 않는다.
+if (nextAngle != blindAngle) {
+  blindAngle = nextAngle;
+  blind.write(blindAngle);
+}
+코드 끝
+확인 : 750→650이면 닫힘 유지, 500→650이면 열림 유지.
+같은 650이어도 이전 상태에 따라 결과가 다르다. 이를 히스테리시스라고 한다.
+else blind.write(0);로 끝내면 '중간 유지' 조건이 깨진다.
+시작은 이 초안에서 0도(열림)로 정했다. 시험이 초기 상태를 지정하면 수정한다.
+
+======================================================================
+[변경알림] 상태가 바뀌는 순간에만 1회 소리
+======================================================================
+준비 : [상태유지]와 [소리].
+[상태유지]의 마지막 if 안에서 blind.write 다음에 아래를 넣는다.
+코드 시작
+tone(BUZZER_PIN, blindAngle == 90 ? 523 : 262, 200);
+코드 끝
+닫힐 때 높은 도 523Hz, 열릴 때 도 262Hz, 0.2초.
+조건 밖에 쓰면 700 이상인 동안 매번 재생되어 '1회'가 아니다.
+확인 : 계속 800인 동안 한 번만, 500으로 바뀌면 한 번 더.
+전환 멜로디와 같은 순간이면 한 피에조에서 두 소리를 동시에 못 낸다.
+[통합코드]는 모드 멜로디 뒤에 상태 변경음을 이어 재생한다.
+
+======================================================================
+[수동모드] AUTO와 MANUAL 우선순위
+======================================================================
+준비 : [버튼전환], [RGB], [상태유지]. 아래는 구조 설명용이며 내부 주석 자리에
+해당 조각을 넣는다. 이 구조 바깥에 자동 RGB/서보 제어를 중복해서 두지 않는다.
+
+코드 시작
+if (manualMode) {
+  setRGB(true, false, true);       // MANUAL은 보라색
+  // blind.write를 새로 호출하지 않음 → 마지막 명령 각도를 유지
+} else {
+  // 여기에 [구간] 코드
+  // 여기에 [상태유지] + [변경알림] 코드
+}
+코드 끝
+MANUAL에서도 조도 읽기, 무드등, 시리얼, 재실 감지는 계속한다.
+서보는 detach하지 않는다. 신호를 끊으면 힘이 빠져 '위치 고정'과 다를 수 있다.
+AUTO 복귀 즉시 현재 조도로 다시 판단한다. 중간 구간이면 현재 위치를 유지한다.
+
+======================================================================
+[시험조립] 시험 예시 1~5단계 조립 지도
+======================================================================
+예시 표의 배점 : 1단계 20 / 2단계 25 / 3단계 30 / 4단계 35 / 5단계 40점.
+뒤 단계는 앞 단계 기능을 포함한다. 표의 숫자를 전부 합산하는 것으로 해석하지 않는다.
+실제 시험의 선택 방식 및 채점은 당일 지시를 따른다.
+
+1단계 : [조도] + [시리얼] + [주기]
+        200ms 조도 출력, 어두울수록 밝은 무드등.
+2단계 : 1단계 + [RGB] + [구간]
+        299/300/699/700 경계 확인.
+3단계 : 2단계 + [서보] + [상태유지] + [변경알림]
+        599/600/699/700과 이전 상태를 함께 확인.
+4단계 : 3단계 + [버튼전환] + [수동모드] + [멜로디]
+        길게 눌러도 1회 전환, 보라색, 현재 각도 고정, 모드 문자 출력.
+5단계 : 4단계 + [거리] + [재실]
+        30cm 이내 무드등만 허용, 조도/거리/모드를 한 줄로 출력.
+
+연습용 60분 배분 예시
+00~05분 : 조건·핀표·선택 단계 확인, 보고서 파일부터 열기
+05~15분 : 1단계 구현 및 조도/LED 확인, 증거 저장
+15~25분 : 2~3단계, 경계값과 상태 유지 확인
+25~40분 : 가능한 경우 4~5단계, 버튼/재실 확인
+40~50분 : 선택 단계 전체 확인, 회로·출력 캡처 정리
+50~60분 : 보고서 완성 및 제출 확인
+이것은 작업 계획 예시다. 미완성 감점 조건을 고려해 되는 단계의 증거를 먼저 남긴다.
+
+======================================================================
+[통합코드] 시험 예시를 한 파일로 조립한 연습용 코드
+======================================================================
+사용법
+1. 다음 '통합 코드 시작'부터 '통합 코드 끝' 사이만 새 스케치에 복사한다.
+2. STAGE를 1~5 중 선택한다. 숫자 하나로 해당 단계까지만 동작한다.
+3. 핀 상수, RGB 공통극, 버튼 회로를 실제 지정 회로에 맞춘다.
+4. STAGE를 바꿔 올릴 때마다 보드가 다시 시작하므로 AUTO/열림으로 초기화된다.
+5. setup/loop/보조 함수를 추가로 중복 붙이지 않는다.
+
+설계 메모
+• 시작 AUTO, 서보 0도. 600~699에서 시작하면 열림 유지.
+• 센서/정기 출력은 200ms 기준, 버튼·음 재생은 loop에서 계속 확인한다.
+• 초음파 pulseIn은 최대 약 25ms 대기하므로 출력 시점에 작은 지연이 생길 수 있다.
+  엄밀한 실시간 200.000ms 보장 구현은 아니다. 긴 멜로디 delay는 제거했다.
+• 멜로디는 각 음 200ms, 음 사이 50ms로 가정했다. 시험에 길이 지정 시 수정한다.
+• 빠른 재전환 시 이전 멜로디를 새 모드 멜로디로 바꾼다.
+• 상태 변경음이 멜로디와 겹치면 멜로디 뒤에 재생한다.
+• 5단계에서 측정 실패는 NA로 출력하며 무드등을 끈다.
+
+통합 코드 시작
+#include <Servo.h>
+
+const int STAGE = 5;               // ★ 선택 단계 1~5
+const int LIGHT_PIN = A0;
+const int MOOD_PIN = 5;             // ★ PWM 필요
+const int RED_PIN = 9, GREEN_PIN = 10, BLUE_PIN = 11;
+const int BUZZER_PIN = 8, SERVO_PIN = 6;
+const int BUTTON_PIN = 4, TRIG_PIN = 2, ECHO_PIN = 3;
+const bool COMMON_ANODE = false;   // 공통 음극=false, 공통 양극=true
+const bool USE_PULLUP = false;     // 외부 풀다운=false, 내부 풀업=true
+const int PRESSED = USE_PULLUP ? LOW : HIGH;
+const unsigned long SAMPLE_MS = 200;
+
+Servo blind;
+bool manualMode = false;
+int blindAngle = 0;
+int light = 0;
+float distance = -1.0;
+unsigned long lastSample = 0;
+int lastRaw, stableButton;
+unsigned long changedAt = 0;
+
+// 한 번에 한 음씩 재생할 예약 목록
+const int SOUND_CAPACITY = 8;
+int soundNotes[SOUND_CAPACITY];
+int soundCount = 0, soundIndex = 0;
+bool soundPlaying = false;
+unsigned long noteStarted = 0;
+const unsigned long NOTE_MS = 200, GAP_MS = 50;
+
+void setRGB(bool r, bool g, bool b) {
+  digitalWrite(RED_PIN, COMMON_ANODE ? !r : r);
+  digitalWrite(GREEN_PIN, COMMON_ANODE ? !g : g);
+  digitalWrite(BLUE_PIN, COMMON_ANODE ? !b : b);
+}
+
+void beginSound() {
+  soundIndex = 0;
+  soundPlaying = true;
+  noteStarted = millis();
+  tone(BUZZER_PIN, soundNotes[0], NOTE_MS);
+}
+
+void startMelody(bool enteringManual) {
+  const int toManual[3] = {392, 330, 262}; // 솔 미 도
+  const int toAuto[3] = {262, 330, 392};   // 도 미 솔
+  noTone(BUZZER_PIN);
+  for (int i = 0; i < 3; i++) {           // 배열 + for문
+    soundNotes[i] = enteringManual ? toManual[i] : toAuto[i];
+  }
+  soundCount = 3;
+  beginSound();
+}
+
+void queueAlert(int hz) {
+  if (!soundPlaying) {
+    soundNotes[0] = hz;
+    soundCount = 1;
+    beginSound();
+  } else if (soundCount < SOUND_CAPACITY) {
+    soundNotes[soundCount++] = hz;
+  }
+  // 매우 빠른 반복 변화로 목록이 가득 차면 추가 알림은 생략한다.
+}
+
+void updateSound() {
+  if (!soundPlaying) return;
+  if (millis() - noteStarted < NOTE_MS + GAP_MS) return;
+  soundIndex++;
+  if (soundIndex >= soundCount) {
+    noTone(BUZZER_PIN);
+    soundPlaying = false;
+  } else {
+    noteStarted = millis();
+    tone(BUZZER_PIN, soundNotes[soundIndex], NOTE_MS);
+  }
+}
+
+float readDistanceCm() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  unsigned long duration = pulseIn(ECHO_PIN, HIGH, 25000UL);
+  if (duration == 0) return -1.0;
+  return duration / 58.2;
+}
+
+void applyOutputs() {
+  int brightness = map(light, 0, 1023, 255, 0);
+  bool occupied = (distance > 0 && distance <= 30.0);
+  if (STAGE >= 5 && !occupied) brightness = 0;
+  analogWrite(MOOD_PIN, brightness);
+
+  if (STAGE >= 2) {
+    if (manualMode) setRGB(true, false, true);
+    else if (light < 300) setRGB(false, false, true);
+    else if (light < 700) setRGB(false, true, false);
+    else setRGB(true, false, false);
+  }
+
+  if (STAGE >= 3 && !manualMode) {
+    int nextAngle = blindAngle;
+    if (light >= 700) nextAngle = 90;
+    else if (light < 600) nextAngle = 0;
+    if (nextAngle != blindAngle) {
+      blindAngle = nextAngle;
+      blind.write(blindAngle);
+      queueAlert(blindAngle == 90 ? 523 : 262);
+    }
+  }
+}
+
+void updateButton() {
+  int raw = digitalRead(BUTTON_PIN);
+  if (raw != lastRaw) {
+    lastRaw = raw;
+    changedAt = millis();
+  }
+  if (millis() - changedAt >= 30 && raw != stableButton) {
+    stableButton = raw;
+    if (stableButton == PRESSED) {
+      manualMode = !manualMode;
+      Serial.print("MODE: ");
+      Serial.println(manualMode ? "MANUAL" : "AUTO");
+      startMelody(manualMode);
+      light = analogRead(LIGHT_PIN); // 모드 전환 직후 최신 값
+      applyOutputs();              // 수동 색과 자동 복귀를 즉시 반영
+    }
+  }
+}
+
+void printStatus() {
+  Serial.print("Light = ");
+  Serial.print(light);
+  if (STAGE >= 5) {
+    Serial.print(", Dist = ");
+    if (distance < 0) Serial.print("NA");
+    else Serial.print(distance, 1);
+    Serial.print(" cm, Mode = ");
+    Serial.print(manualMode ? "MANUAL" : "AUTO");
+  }
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(MOOD_PIN, OUTPUT);
+  analogWrite(MOOD_PIN, 0);
+  if (STAGE >= 2) {
+    pinMode(RED_PIN, OUTPUT);
+    pinMode(GREEN_PIN, OUTPUT);
+    pinMode(BLUE_PIN, OUTPUT);
+    setRGB(false, false, false);
+  }
+  if (STAGE >= 3) {
+    blind.attach(SERVO_PIN);
+    blind.write(blindAngle);
+    pinMode(BUZZER_PIN, OUTPUT);
+  }
+  if (STAGE >= 4) {
+    pinMode(BUTTON_PIN, USE_PULLUP ? INPUT_PULLUP : INPUT);
+    lastRaw = stableButton = digitalRead(BUTTON_PIN);
+    Serial.println("MODE: AUTO");
+  }
+  if (STAGE >= 5) {
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+    digitalWrite(TRIG_PIN, LOW);
+  }
+  lastSample = millis();
+}
+
+void loop() {
+  if (STAGE >= 3) updateSound();
+  if (STAGE >= 4) updateButton();
+  unsigned long now = millis();
+  if (now - lastSample >= SAMPLE_MS) {
+    lastSample = now;
+    light = analogRead(LIGHT_PIN);
+    if (STAGE >= 5) distance = readDistanceCm();
+    applyOutputs();
+    printStatus();
+  }
+}
+통합 코드 끝
+
+통합 코드에서 빠르게 고칠 곳
+• 요구 단계               : STAGE
+• 핀 배치                 : 맨 위 *_PIN 상수
+• 조도 읽는 간격          : SAMPLE_MS
+• RGB 구간                : applyOutputs의 300, 700
+• 서보 닫힘/열림 기준     : applyOutputs의 >= 700, < 600
+• 서보 각도               : nextAngle = 90 / 0, 초기 blindAngle
+• 재실 거리               : occupied의 <= 30.0
+• 닫힘/열림 알림음        : queueAlert의 523 / 262
+• 전환 멜로디             : toManual / toAuto 배열
+• 음 길이와 음 사이 간격  : NOTE_MS / GAP_MS
+
+음 예약 설명
+startMelody : 배열 3개 음을 for문으로 예약하고 첫 음 시작.
+updateSound : 시간이 지나면 다음 음으로 넘어감. 기다리며 멈추지 않음.
+queueAlert : 서보 변경음을 예약. 멜로디 재생 중이면 뒤에 붙임.
+예약 배열은 8칸이다. 비정상적으로 빠른 센서 반복 변화로 가득 차면 추가음을 생략한다.
+버튼을 다시 누르면 새 모드 멜로디가 이전 예약을 대체한다.
+이 정책까지 엄격히 채점하는 시험이면 '모든 이벤트 음 보존' 방식으로 별도 수정해야 한다.
+
+======================================================================
+[확인표] 단계별 동작 검증과 캡처
+======================================================================
+[ ] 1단계 : 어두울 때 조도값 감소, 무드등 밝아짐
+[ ] 1단계 : 밝을 때 조도값 증가, 무드등 어두워짐
+[ ] 1단계 : Light = 원본 조도값 형태로 약 0.2초마다 출력
+[ ] 2단계 : 299 파랑 / 300 초록 / 699 초록 / 700 빨강
+[ ] 3단계 : 700에서 90도, 이후 650에서도 90도 유지
+[ ] 3단계 : 599에서 0도, 이후 600과 650에서도 0도 유지
+[ ] 3단계 : 밝은 상태 계속 유지 시 알림 반복 없음
+[ ] 3단계 : 닫힘 523Hz / 열림 262Hz, 각 0.2초
+[ ] 4단계 : 한 번 누름 MANUAL / 다시 누름 AUTO
+[ ] 4단계 : 길게 눌러도 여러 번 토글되지 않음
+[ ] 4단계 : MANUAL 보라색, 조도가 변해도 서보 위치 고정
+[ ] 4단계 : MANUAL 진입 솔미도 / AUTO 복귀 도미솔
+[ ] 4단계 : 전환 시 MODE: MANUAL 또는 MODE: AUTO 출력
+[ ] 4단계 : 멜로디 중에도 정기 출력이 길게 끊기지 않음
+[ ] 5단계 : 어두운 조건에서 29cm와 30cm는 무드등 동작
+[ ] 5단계 : 같은 조도에서 30cm 초과면 무드등 꺼짐
+[ ] 5단계 : 측정 실패 NA면 무드등 꺼지고 조도/RGB/서보는 계속 동작
+[ ] 5단계 : Light / Dist / Mode가 한 줄로 출력
+
+실제 조도를 정확히 299/300으로 만들기 어려울 때
+연습 중에만 light = analogRead(LIGHT_PIN);를 light = 299;처럼 바꿔 경계를 검사한다.
+통합 코드에는 loop와 updateButton 두 곳에서 조도를 읽는다. 두 곳을 함께 확인한다.
+검사 후 반드시 analogRead로 복원하고, 실제 센서 입력으로 다시 확인한다.
+보고서에는 '코드에 값 대입한 경계 검사'와 '실제 센서 동작'을 구분한다.
+
+======================================================================
+[보고서] 시험 중 채워 넣는 짧은 보고서 틀
+======================================================================
+아래는 보고서 양식이 따로 없을 때 쓸 수 있는 틀이다. 지정 양식이 있으면 우선한다.
+실제로 확인한 것만 적고, 아직 못 한 부분은 미확인으로 표시한다.
+
+제목 : 조도 기반 무드등과 자동 블라인드 구현
+학번 / 이름 :
+선택 단계 :       단계
+사용 보드 :
+
+1. 구현 목표
+선택한 단계의 요구 동작을 적는다.
+예시 문장 : 조도값에 따라 무드등 밝기를 조절하고, [추가 구현 기능]을 구현하였다.
+
+2. 하드웨어 연결
+조도 A__ / 무드등 D__ / RGB R D__, G D__, B D__
+서보 D__ / 피에조 D__ / 버튼 D__ / 초음파 Trig D__, Echo D__
+RGB 공통극 :        / 버튼 풀다운 또는 풀업 :
+회로 사진 또는 시뮬레이션 화면 : [삽입]
+
+3. 핵심 구현 방법
+조도 : 원본 0~1023을 map으로 PWM 255~0으로 변환하였다.
+RGB : [각 구간 조건과 색]
+서보 : [닫힘 조건], [열림 조건], 중간 구간에서는 이전 각도를 유지하였다.
+알림 : 이전 상태와 다음 상태가 다를 때만 소리를 출력하였다.
+버튼 : 안정된 누름으로 바뀌는 순간에만 모드를 전환하였다.
+재실 : [거리 조건]에서만 무드등 출력을 허용하였다.
+※ 선택하지 않은 단계는 지운다.
+
+4. 동작 확인
+시험 입력 또는 상황 | 기대 결과 | 실제 확인 결과 | 증거 번호
+[                  ] | [       ] | [             ] | [      ]
+[                  ] | [       ] | [             ] | [      ]
+[                  ] | [       ] | [             ] | [      ]
+
+5. 결과 및 제한 사항
+완료한 기능 :
+미완성 또는 미확인 기능 :
+발생한 문제와 해결 :
+
+6. 제출 코드 및 증거
+최종 코드 파일명 :
+회로 화면 :
+시리얼 출력 화면 :
+상태 전환 확인 화면 또는 동영상 :
+※ 이미지 한 장으로 소리의 길이나 반복 여부를 증명할 수 없으므로 관찰 내용을 적는다.
+
+캡처를 미리 남길 순간
+• 1단계 : 어두움/밝음 두 조건의 원본 조도값과 LED 상태
+• 2단계 : 파랑/초록/빨강 세 구간
+• 3단계 : 닫힘 후 중간 유지, 열림 후 중간 유지
+• 4단계 : AUTO/MANUAL 문자와 보라색, 수동 중 조도 변화
+• 5단계 : 같은 어두운 조건에서 30cm 이내/밖의 무드등 비교
+
+======================================================================
+[문제해결] 증상별 가장 먼저 볼 곳
+======================================================================
+컴파일 오류 '#...'           → 설명 주석을 //로. #include는 그대로.
+setup/loop 재정의 오류       → 여러 조각의 setup/loop를 하나로 합쳤는지.
+i가 선언 안 됨              → for 안에서 선언한 i를 밖에서 사용했는지.
+ledRed가 선언 안 됨          → 메모의 이름을 그대로 섞었는지. 이름/대소문자 통일.
+세미콜론 또는 중괄호 오류    → 바로 윗줄의 ;, }, 따옴표부터 확인.
+LED 안 켜짐                 → 극성, 저항, GND, 핀 번호, 브레드보드 연결 줄.
+LED 밝기 조절만 안 됨        → PWM 핀인지, Servo/tone 타이머 충돌인지.
+RGB 색 반대                 → 공통 양극/음극 설정과 실제 R/G/B 다리 순서.
+RGB 이상한 혼합색           → 이전 색을 끄지 않았는지, 다른 코드가 덮어쓰는지.
+조도가 반대로 반응          → 조도센서/고정저항 위아래 배치, map 방향.
+조도값이 예상 범위와 다름    → 실제 밝음/어두움 값을 먼저 기록. 조명과 배선 확인.
+버튼 안 눌렀는데 변함        → 풀다운/풀업 누락, 입력 핀 떠 있음.
+버튼 한 번에 여러 번 전환    → HIGH 동안 계속 토글하는지. [버튼전환] 사용.
+버튼 반응 늦음              → 긴 delay, 멜로디 for+delay, pulseIn 대기.
+서보 650에서 자꾸 열림       → 중간 구간을 else 0도로 처리했는지.
+서보가 수동에서도 움직임     → 자동 제어를 !manualMode 안에 넣었는지.
+서보가 덜덜거리거나 재시작   → 전원 용량, 공통 GND, 기계적 걸림 확인.
+소리가 거의 안 들림         → tone 직후 noTone을 실행했는지, 수동 피에조인지.
+상태 변경음 계속 반복       → nextAngle != blindAngle 안에 있는지.
+멜로디 마지막 음만 들림      → tone 여러 번을 대기 없이 연속 호출했는지.
+초음파가 0 또는 NA           → Trig/Echo 뒤바뀜, GND, 반사 대상, 감지 범위.
+아무도 없는데 무드등 켜짐    → 실패값 0을 <=30만으로 처리했는지. 유효값 조건 추가.
+값이 깨져 출력됨             → 시리얼 속도 9600 일치 여부.
+sprintf 출력 후 이상 동작    → 배열 크기 부족 또는 %d/%ld 자료형 불일치.
+업로드 안 됨                → 보드/포트 선택, USB 데이터 케이블, 연결 상태.
+
+======================================================================
+[보완목록] 강의자료와 메모를 비교해 추가하거나 바로잡은 내용
+======================================================================
+자료명은 첨부 파일 기준. 쪽수는 PDF 파일의 실제 페이지 번호 기준이다.
+
+1. 00. (아두이노)_tinkercad(1).pdf
+   회로를 만들고 코드를 넣어 시뮬레이션하는 연습 환경 소개.
+   https://www.tinkercad.com/ 에서 Circuits로 연습할 수 있다.
+   첨부 강의의 메뉴 표기이며 현재 화면 명칭은 달라질 수 있다.
+   가상 부품과 실제 보드의 전원/타이머 동작 차이는 별도 확인한다.
+
+2. [출력] 2. 아두이노_LED(1).pdf
+   PDF 5~8쪽 : LED 극성, 직렬저항, 브레드보드 연결, 입출력 구분.
+   PDF 11~13쪽 : 여러 LED 순차 점등과 페이드 응용.
+   [LED], [페이드], [배선]에 정리.
+
+3. 03_ 아두이노_삼색LED(1).pdf
+   PDF 14~24쪽 : 버튼으로 LED 제어와 순차 점등.
+   PDF 26~31쪽 : RGB 색 혼합과 랜덤 색.
+   PDF 32~37쪽 : 버튼별 RGB 제어와 밝기 증가.
+   [버튼누름], [RGB], [RGB응용]으로 보완.
+
+4. [출력]4. 아두이노_피에조_조도(출력)(1).pdf
+   PDF 6쪽 : 버튼 상태 전환 예시. 길게 누르면 반복 전환될 수 있어 누름 순간 검사 보완.
+   PDF 13~21쪽 : tone, 음계 배열, 시간 배열, 버튼 피아노.
+   [소리], [멜로디], [버튼전환]으로 정리.
+
+5. [출력]5_1.아두이노_조도센서(1).pdf
+   PDF 7~11쪽 : 역방향 map, 시리얼 출력, sprintf.
+   [조도], [시리얼]에 정리. char pr[12]의 공간 부족을 수정.
+
+6. [출력]5_2.아두이노_초음파센서(1).pdf
+   PDF 7~12쪽 : 초음파 거리, 거리별 RGB, 시리얼 출력.
+   [거리], [구간], [시리얼]에 재사용 원리 정리.
+   거리별 RGB는 [구간]의 light를 distance로 바꾸고 10/20/30 경계를 사용하되,
+   distance <= 0 또는 30 이상이면 모두 끄는 조건을 앞에 둔다.
+   pulseIn 설명은 'HIGH가 될 때까지'가 아니라 HIGH 펄스 폭 측정으로 바로잡음.
+
+7. [출력]5_3 아두이노_초음파(1).pdf
+   PDF 4~8쪽 : 거리별 음높이, 삐삐 간격, 스마트 가로등.
+   [거리소리], [재실]로 보완. 설명과 코드가 서로 다른 음계는 명시하고 통일.
+
+8. [출력]6. 아두이노_서보모터(1).pdf
+   PDF 10~12쪽 : Servo 객체, attach, write, 서서히 회전.
+   PDF 13~17쪽 : 가변저항으로 각도 조절. 메모에 없는 부분 보완.
+   PDF 18~25쪽 : 초음파 차단기, 조도에 따른 서보.
+   [서보], [가변저항]으로 보완.
+
+9. 아두이노_단계별_동작_평가기준(2).docx
+   단계 조건, 구간 경계, 상태 유지, 전환음, 재실 조건을 조립 기준으로 사용.
+   실제 핀 배치표는 파일 안에 없어 연습 핀을 따로 정함.
+
+10. 수업 모음(1).txt / 조각 모음(1).txt
+    수업에서 사용한 기본 함수와 설명 방식 유지.
+    # 주석, 선언하지 않은 변수, for 밖 i, random 끝값, 음표 길이,
+    sprintf 버퍼, 정수 거리 절삭 등 실수 가능 부분 보완.
+
+추가 검증한 공식 참고 문서
+• UNO PWM 핀 및 PWM 의미
+  https://support.arduino.cc/hc/en-us/articles/9350537961500-Use-PWM-output-with-Arduino
+• Servo 사용 시 PWM 제약
+  https://github.com/arduino-libraries/Servo/blob/master/docs/readme.md
+• tone의 비차단 동작과 PWM 제약
+  https://docs.arduino.cc/language-reference/en/functions/advanced-io/tone/
+• pulseIn의 반환값과 시간 제한
+  https://docs.arduino.cc/language-reference/en/functions/advanced-io/pulseIn/
+• map의 범위 제한 여부
+  https://github.com/arduino/reference-en/blob/master/Language/Functions/Math/map.adoc
+
+[초안 피드백 포인트]
+설명이 너무 많은지 / 코드 조각이 더 잘게 필요할지 / 배선 설명을 그림으로 볼지 /
+통합 코드의 millis 부분이 어려운지 / 인쇄용 압축판이 필요한지.

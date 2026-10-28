@@ -1,0 +1,238 @@
+=======1~3=======
+
+#include <Servo.h>
+Servo mys;
+
+// 조도 A0
+// BGR 9 10 11
+// LED 6
+// 서보 3
+// 부저 5
+
+int jodo = 0;
+int seroc = 0;  // 0 = 열림, 1 = 닫힘
+
+void setup() {
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+
+  Serial.begin(9600);
+  mys.attach(3);
+  mys.write(0);
+}
+
+void loop() {
+  jodo = analogRead(A0);
+
+  char pr[30];
+  sprintf(pr, "Light = %d", jodo);
+  Serial.println(pr);
+
+  analogWrite(6, map(jodo, 0, 1023, 255, 0));
+
+  if (jodo < 300) {
+    analogWrite(9, 255);
+    analogWrite(10, 0);
+    analogWrite(11, 0);
+
+    if (seroc == 1) {
+      mys.write(0);
+      tone(5, 262, 200);
+      seroc = 0;
+    }
+
+  } else if (jodo < 700) {
+    analogWrite(9, 0);
+    analogWrite(10, 255);
+    analogWrite(11, 0);
+
+    if (jodo < 600 && seroc == 1) {
+      mys.write(0);
+      tone(5, 262, 200);
+      seroc = 0;
+    }
+
+  } else {
+    analogWrite(9, 0);
+    analogWrite(10, 0);
+    analogWrite(11, 255);
+
+    if (seroc == 0) {
+      mys.write(90);
+      tone(5, 523, 200);
+      seroc = 1;
+    }
+  }
+
+  delay(200);
+}
+
+
+=====4~5=====
+
+
+// 조도 a0
+// bgr 9 10 11
+// led 6
+// 서보 3
+// 부저 5
+// 버튼 8
+// 초음파 트리그 2 에코 4
+
+// ---음계---
+// [4옥타브]
+// 도(C)  = 262Hz
+// 레(D)  = 294Hz
+// 미(E)  = 330Hz
+// 파(F)  = 349Hz
+// 솔(G)  = 392Hz
+// 라(A)  = 440Hz
+// 시(B)  = 494Hz
+
+
+#include <Servo.h>;
+Servo mys;
+
+int jodo = 0;
+int seroc = 0;
+int Bmode = 0;
+int a = 0;
+int pa = 0;
+
+
+int domi[] = {262, 330, 392};
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(6, OUTPUT);
+  pinMode(8, INPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(4, INPUT);
+  pinMode(5, OUTPUT);
+  
+
+  Serial.begin(9600);
+  mys.attach(3);
+  mys.write(0);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  jodo = analogRead(A0);
+
+  // ===== 4단계: 버튼 모드 전환 =====
+  a = digitalRead(8);
+
+  if (a == 1 && pa == 0) {
+    Bmode = (Bmode == 0) ? 1 : 0;
+
+    if (Bmode == 1) {
+      Serial.println("MODE: MANUAL");
+
+      // 솔 미 도
+      for (int i = 2; i >= 0; i--) {
+        tone(5, domi[i], 200);
+        delay(300);
+      }
+
+    } else {
+      Serial.println("MODE: AUTO");
+
+      // 도 미 솔
+      for (int i = 0; i < 3; i++) {
+        tone(5, domi[i], 200);
+        delay(300);
+      }
+    }
+  }
+
+  pa = a;
+
+  // ===== 5단계: 초음파 거리 측정 =====
+  digitalWrite(2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(2, LOW);
+
+  long duration = pulseIn(4, HIGH);
+  float dist = duration / 58.2;
+
+  // ===== 1단계 + 5단계: 무드등 =====
+  if (dist > 0 && dist <= 30) {
+    analogWrite(6, map(jodo, 0, 1023, 255, 0));
+  } else {
+    analogWrite(6, 0);
+  }
+
+  // ===== 4단계: MANUAL =====
+  if (Bmode == 1) {
+    // 보라색, 서보 현재 위치 유지
+    analogWrite(9, 255);
+    analogWrite(10, 0);
+    analogWrite(11, 255);
+
+  } else {
+
+    // ===== 2단계: 삼색 LED =====
+    if (jodo < 300) {
+      analogWrite(9, 255);
+      analogWrite(10, 0);
+      analogWrite(11, 0);
+
+      // ===== 3단계: 서보 열림 =====
+      if (seroc == 1) {
+        mys.write(0);
+        tone(5, 262, 200);
+        seroc = 0;
+      }
+
+    } else if (jodo < 700) {
+      analogWrite(9, 0);
+      analogWrite(10, 255);
+      analogWrite(11, 0);
+
+      if (jodo < 600 && seroc == 1) {
+        mys.write(0);
+        tone(5, 262, 200);
+        seroc = 0;
+      }
+
+    } else {
+      analogWrite(9, 0);
+      analogWrite(10, 0);
+      analogWrite(11, 255);
+
+      // ===== 3단계: 서보 닫힘 =====
+      if (seroc == 0) {
+        mys.write(90);
+        tone(5, 523, 200);
+        seroc = 1;
+      }
+    }
+  }
+
+  // ===== 5단계: 시리얼 출력 =====
+  char pr[30];
+  sprintf(pr, "Light = %d", jodo);
+  Serial.print(pr);
+
+  Serial.print(", Dist = ");
+  Serial.print(dist, 0);
+
+  Serial.print(" cm, Mode = ");
+
+  if (Bmode == 0) {
+    Serial.println("AUTO");
+  } else {
+    Serial.println("MANUAL");
+  }
+
+  delay(200);
+}
