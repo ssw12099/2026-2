@@ -1,0 +1,109 @@
+//무드 5
+// bgr 9 10 11
+// 조도 a0
+// 피에조 6
+// 서보 13
+// 트리그 2
+// 에코 3
+// 버튼 7
+
+#include <Servo.h>
+Servo mys;
+
+int jodo = 0;
+int seroc = 0;
+int mode = 0;
+
+int sori[] = { 262, 300, 392 };
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+
+  pinMode(5, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, INPUT);
+  pinMode(7, INPUT);
+
+  mys.attach(13);
+  mys.write(0);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  jodo = analogRead(A0);
+
+  digitalWrite(2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(2, LOW);
+
+  long dura = pulseIn(3, HIGH);
+  long dis = dura / 58.2;
+
+  if (dis <= 30) {
+    analogWrite(5, map(jodo, 0, 1023, 255, 0));
+  } else {
+    analogWrite(5, 0);
+  }
+
+  if (digitalRead(7) == HIGH) {
+    mode = (mode == 0) ? 1 : 0;
+    if (mode == 0) {
+      for (int i = 0; i < 3; i++) {
+        tone(6, sori[i], 200);
+        delay(220);
+      }
+    } else {
+      for (int i = 2; i >= 0; i--) {
+        tone(6, sori[i], 200);
+        delay(220);
+      }
+    }
+  }
+
+  char pr[50];
+  sprintf(pr, "LIGHT = %d, DIST = %ld, MODE = %s", jodo, dis, (mode == 0) ? "AUTO" : "MANUAL");
+  Serial.println(pr);
+  if (mode == 1) {
+    digitalWrite(9, HIGH);
+    digitalWrite(10, LOW);
+    digitalWrite(11, HIGH);
+  } else {
+    if (jodo < 300) {
+      digitalWrite(9, HIGH);
+      digitalWrite(10, LOW);
+      digitalWrite(11, LOW);
+      if (seroc != 0) {
+        mys.write(0);
+        tone(6, 262, 200);
+        seroc = 0;
+      }
+    } else if (jodo < 700) {
+      digitalWrite(10, HIGH);
+      digitalWrite(9, LOW);
+      digitalWrite(11, LOW);
+      if (seroc != 0 && jodo < 600) {
+        mys.write(0);
+        tone(6, 262, 200);
+        seroc = 0;
+      }
+    } else {
+      digitalWrite(11, HIGH);
+      digitalWrite(10, LOW);
+      digitalWrite(9, LOW);
+      if (seroc != 1) {
+        mys.write(90);
+        tone(6, 523, 200);
+        seroc = 1;
+      }
+    }
+    delay(200);
+  }
+}

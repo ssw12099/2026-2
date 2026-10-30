@@ -1,0 +1,105 @@
+// 무드 5
+// 피에조 4
+// bgr 9 10 11
+// 서보 13
+// 조도 A0
+
+#include <Servo.h>
+Servo mys;
+
+int jodo = 0;
+int seroc = 0;
+
+int mode = 0;  //0=auto, 1=manual
+int sori[] = { 262, 330, 392 };
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(6, INPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, INPUT);
+
+  mys.attach(13);
+  mys.write(0);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  digitalWrite(2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(2, LOW);
+  long dura = pulseIn(3, HIGH);
+  long dis = dura / 58.2;
+
+  jodo = analogRead(A0);
+  if (dis > 0 && dis <= 30) {
+    analogWrite(5, map(jodo, 0, 1023, 255, 0));
+  } else {
+    analogWrite(5, 0);
+  }
+
+  char pr[50];
+  sprintf(pr, "LIGHT = %d, DIST = %ld, MODE = %s", jodo, dis, (mode == 0) ? "AUTO" : "MANUAL");
+  Serial.println(pr);
+
+  if (digitalRead(6) == HIGH) {
+    mode = (mode == 0) ? 1 : 0;
+    if (mode == 0) {
+      for (int i = 0; i < 3; i++) {
+        tone(4, sori[i], 200);
+        delay(220);
+      }
+    } else {
+      for (int i = 2; i >= 0; i--) {
+        tone(4, sori[i], 200);
+        delay(220);
+      }
+    }
+  }
+  if (mode == 0) {
+    if (jodo < 300) {
+      digitalWrite(9, HIGH);
+      digitalWrite(10, LOW);
+      digitalWrite(11, LOW);
+      if (seroc != 0) {
+        mys.write(0);
+        seroc = 0;
+        tone(4, 262, 200);
+      }
+    } else if (jodo < 700) {
+      digitalWrite(9, LOW);
+      digitalWrite(10, HIGH);
+      digitalWrite(11, LOW);
+      if (seroc != 0 && jodo < 600) {
+        mys.write(0);
+        seroc = 0;
+        tone(4, 262, 200);
+      }
+    } else {
+      digitalWrite(9, LOW);
+      digitalWrite(10, LOW);
+      digitalWrite(11, HIGH);
+      if (seroc != 1) {
+        mys.write(90);
+        seroc = 1;
+        tone(4, 523, 200);
+      }
+    }
+  } else {
+    digitalWrite(9, HIGH);
+    digitalWrite(10, LOW);
+    digitalWrite(11, HIGH);
+  }
+
+  delay(200);
+}
